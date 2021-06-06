@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
 using ACE.DatLoader;
+using ACViewer.Render;
 
 namespace ACViewer.View
 {
@@ -12,17 +13,21 @@ namespace ACViewer.View
     /// </summary>
     public partial class MainMenu : UserControl
     {
-        public static MainWindow MainWindow { get => MainWindow.Instance; }
+        public static MainWindow MainWindow => MainWindow.Instance;
 
-        public static ParticleExplorer Particle { get => ParticleExplorer.Instance; }
+        public static MainMenu Instance { get; set; }
 
-        public static GameView GameView { get => GameView.Instance; }
+        public static GameView GameView => GameView.Instance;
 
-        public static Options Options;
+        public static Options Options { get; set; }
 
-        public static bool ShowHUD;
+        public static bool ShowHUD { get; set; }
 
-        public static MainMenu Instance;
+        public static bool UseMipMaps
+        {
+            get => TextureCache.UseMipMaps;
+            set => TextureCache.UseMipMaps = value;
+        }
 
         public MainMenu()
         {
@@ -77,12 +82,17 @@ namespace ACViewer.View
             if (DatManager.CellDat == null || DatManager.PortalDat == null)
                 return;
 
-            GameView.ViewMode = ViewMode.Map;
+            MapViewer.Instance.Init();
         }
 
         private void ShowHUD_Click(object sender, RoutedEventArgs e)
         {
             ToggleHUD();
+        }
+
+        private void UseMipMaps_Click(object sender, RoutedEventArgs e)
+        {
+            ToggleMipMaps();
         }
 
         public static bool ToggleHUD()
@@ -91,6 +101,14 @@ namespace ACViewer.View
             Instance.optionShowHUD.IsChecked = ShowHUD;
 
             return ShowHUD;
+        }
+
+        public static bool ToggleMipMaps()
+        {
+            UseMipMaps = !UseMipMaps;
+            Instance.optionUseMipMaps.IsChecked = UseMipMaps;
+
+            return UseMipMaps;
         }
 
         private void ShowLocation_Click(object sender, RoutedEventArgs e)
@@ -108,6 +126,12 @@ namespace ACViewer.View
         private void Guide_Click(object sender, RoutedEventArgs e)
         {
             Process.Start(@"docs\index.html");
+        }
+
+        private void FindDID_Click(object sender, RoutedEventArgs e)
+        {
+            var findDID = new Finder();
+            findDID.ShowDialog();
         }
     }
 }

@@ -69,7 +69,8 @@ namespace ACViewer
         public void DoStance(MotionStance stance)
         {
             var rawState = new RawMotionState();
-            rawState.ForwardCommand = (uint)stance;
+            rawState.CurrentStyle = (uint)stance;
+            rawState.ForwardCommand = (uint)MotionCommand.Ready;
             rawState.CurrentHoldKey = HoldKey.Run;
 
             var motionInterp = PhysicsObj.get_minterp();
@@ -109,6 +110,9 @@ namespace ACViewer
 
             // update anim only?
             PhysicsObj.update_animation();
+
+            if (PhysicsObj.ParticleManager != null)
+                PhysicsObj.ParticleManager.UpdateParticles();
 
             var minterp = PhysicsObj.get_minterp();
             //if (minterp.motions_pending())

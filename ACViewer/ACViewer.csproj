@@ -65,14 +65,39 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="ActionCommand.cs" />
     <Compile Include="Data\DIDTable.cs" />
     <Compile Include="Data\DIDTables.cs" />
     <Compile Include="Entity\AmbientSoundDesc.cs" />
     <Compile Include="Entity\AmbientSoundTableDesc.cs" />
     <Compile Include="Entity\AnimationFrame.cs" />
     <Compile Include="Entity\AnimationHook.cs" />
+    <Compile Include="Entity\AnimationHooks\AttackHook.cs" />
+    <Compile Include="Entity\AnimationHooks\CallPESHook.cs" />
+    <Compile Include="Entity\AnimationHooks\CreateParticleHook.cs" />
+    <Compile Include="Entity\AnimationHooks\DefaultScriptPartHook.cs" />
+    <Compile Include="Entity\AnimationHooks\DestroyParticleHook.cs" />
+    <Compile Include="Entity\AnimationHooks\DiffuseHook.cs" />
+    <Compile Include="Entity\AnimationHooks\DiffusePartHook.cs" />
+    <Compile Include="Entity\AnimationHooks\EtherealHook.cs" />
+    <Compile Include="Entity\AnimationHooks\LuminousHook.cs" />
+    <Compile Include="Entity\AnimationHooks\LuminousPartHook.cs" />
+    <Compile Include="Entity\AnimationHooks\NoDrawHook.cs" />
+    <Compile Include="Entity\AnimationHooks\ReplaceObjectHook.cs" />
+    <Compile Include="Entity\AnimationHooks\ScaleHook.cs" />
+    <Compile Include="Entity\AnimationHooks\SetLightHook.cs" />
+    <Compile Include="Entity\AnimationHooks\SetOmegaHook.cs" />
+    <Compile Include="Entity\AnimationHooks\SoundHook.cs" />
+    <Compile Include="Entity\AnimationHooks\SoundTableHook.cs" />
+    <Compile Include="Entity\AnimationHooks\SoundTweakedHook.cs" />
+    <Compile Include="Entity\AnimationHooks\StopParticleHook.cs" />
+    <Compile Include="Entity\AnimationHooks\TextureVelocityHook.cs" />
+    <Compile Include="Entity\AnimationHooks\TextureVelocityPartHook.cs" />
+    <Compile Include="Entity\AnimationHooks\TransparentHook.cs" />
+    <Compile Include="Entity\AnimationHooks\TransparentPartHook.cs" />
     <Compile Include="Entity\AnimData.cs" />
     <Compile Include="Entity\AnimPartChange.cs" />
+    <Compile Include="Entity\AttackCone.cs" />
     <Compile Include="Entity\BldPortal.cs" />
     <Compile Include="Entity\BSPLeaf.cs" />
     <Compile Include="Entity\BSPNode.cs" />
@@ -130,6 +155,7 @@
     <Compile Include="Entity\TexMerge.cs" />
     <Compile Include="Entity\TimeOfDay.cs" />
     <Compile Include="Entity\TMTerrainDesc.cs" />
+    <Compile Include="Enum\DatType.cs" />
     <Compile Include="Extensions\PositionExtensions.cs" />
     <Compile Include="Extensions\TextureExtensions.cs" />
     <Compile Include="Extensions\Vector2Extensions.cs" />
@@ -258,6 +284,9 @@
     <Compile Include="View\FileInfo.xaml.cs">
       <DependentUpon>FileInfo.xaml</DependentUpon>
     </Compile>
+    <Compile Include="View\Finder.xaml.cs">
+      <DependentUpon>Finder.xaml</DependentUpon>
+    </Compile>
     <Compile Include="View\MainMenu.xaml.cs">
       <DependentUpon>MainMenu.xaml</DependentUpon>
     </Compile>
@@ -296,6 +325,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="View\FileInfo.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="View\Finder.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -436,7 +469,6 @@
     <Compile Include="Physics\Extensions\QuaternionExtensions.cs" />
     <Compile Include="Physics\Extensions\QueueExtensions.cs" />
     <Compile Include="Physics\Extensions\Vector3Extensions.cs" />
-    <Compile Include="Physics\Hooks\AnimDoneHook.cs" />
     <Compile Include="Physics\Hooks\AnimHook.cs" />
     <Compile Include="Physics\Hooks\FPHook.cs" />
     <Compile Include="Physics\Hooks\PhysicsHookType.cs" />
@@ -523,6 +555,7 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Icons\OpenFile_16x.png" />
+    <Resource Include="Icons\Search_16x.png" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Content\Images\highres.png">

@@ -1,14 +1,21 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+
 using MonoGame.Framework.WpfInterop.Input;
+
 using ACE.DatLoader;
 using ACE.DatLoader.FileTypes;
 using ACE.Entity.Enum;
+using ACE.Server.Physics.Animation;
+
 using ACViewer.Model;
 using ACViewer.Render;
 using ACViewer.View;
-using System.Collections.Generic;
 
 namespace ACViewer
 {
@@ -21,24 +28,26 @@ namespace ACViewer
 
     public class ModelViewer
     {
-        public static MainWindow MainWindow { get => MainWindow.Instance; }
+        public static MainWindow MainWindow => MainWindow.Instance;
+        public static GameView GameView => GameView.Instance;
 
-        public static ModelViewer Instance;
+        public static ModelViewer Instance { get; set; }
 
         public SetupInstance Setup;
         public R_EnvCell EnvCell;
         public R_Environment Environment;
 
-        public static GraphicsDevice GraphicsDevice { get => GameView.Instance.GraphicsDevice; }
-        public Render.Render Render { get => GameView.Instance.Render; }
-        public static Effect Effect { get => ACViewer.Render.Render.Effect; }
-        public static Camera Camera { get => GameView.Camera; }
+        public static GraphicsDevice GraphicsDevice => GameView.GraphicsDevice;
+        public Render.Render Render => GameView.Render;
+        public static Effect Effect => ACViewer.Render.Render.Effect;
+        public static Camera Camera => GameView.Camera;
 
-        public ViewObject ViewObject;
+        public ViewObject ViewObject { get; set; }
 
         public bool GfxObjMode = false;
 
-        public WpfKeyboard Keyboard { get => GameView.Instance._keyboard; }
+        public WpfKeyboard Keyboard => GameView._keyboard;
+
         public KeyboardState PrevKeyboardState;
 
         public ModelType ModelType;
@@ -50,6 +59,8 @@ namespace ACViewer
 
         public void LoadModel(uint id)
         {
+            TextureCache.Init();
+
             // can be either a gfxobj or setup id
             // if gfxobj, create a simple setup
             MainWindow.Status.WriteLine($"Loading {id:X8}");
@@ -62,8 +73,11 @@ namespace ACViewer
 
             ModelType = ModelType.Setup;
         }
+
         public void LoadModel(uint id, ClothingTable clothingBase, uint palTemplate, float shade)
         {
+            TextureCache.Init();
+
             // can be either a gfxobj or setup id
             // if gfxobj, create a simple setup
             GfxObjMode = false;
@@ -73,13 +87,15 @@ namespace ACViewer
             FileTypes.ObjDesc objDesc = new FileTypes.ObjDesc();
 
             var cbe = clothingBase.ClothingBaseEffects[id].CloObjectEffects;
+
             foreach (var objEffect in cbe)
             {
                 ACE.DatLoader.Entity.AnimationPartChange apChange = new ACE.DatLoader.Entity.AnimationPartChange();
                 apChange.PartID = objEffect.ModelId;
                 apChange.PartIndex = (byte)objEffect.Index;
 
-                objDesc.AnimPartChanges.Add(apChange);
+                objDesc.AnimPartChanges.Add(apChange.PartIndex, apChange);
+
                 foreach(var texEffect in objEffect.CloTextureEffects)
                 {
                     ACE.DatLoader.Entity.TextureMapChange tmChange = new ACE.DatLoader.Entity.TextureMapChange();
@@ -87,9 +103,13 @@ namespace ACViewer
                     tmChange.OldTexture = texEffect.OldTexture;
                     tmChange.NewTexture = texEffect.NewTexture;
 
-                    objDesc.TextureChanges.Add(tmChange);
+                    if (!objDesc.TextureChanges.TryGetValue(tmChange.PartIndex, out var tmChanges))
+                    {
+                        tmChanges = new List<ACE.DatLoader.Entity.TextureMapChange>();
+                        objDesc.TextureChanges.Add(tmChange.PartIndex, tmChanges);
+                    }
+                    tmChanges.Add(tmChange);
                 }
-
             }
 
             // To hold our Custom Palette (palette swaps)
@@ -113,13 +133,19 @@ namespace ACViewer
                 }
             }
 
-
             Setup = new SetupInstance(id, objDesc, customPaletteColors);
-            InitObject(id);
 
-            Render.Camera.InitModel(Setup.Setup.BoundingBox);
+            if (ViewObject == null || ViewObject.PhysicsObj.PartArray.Setup._dat.Id != id)
+            {
+                InitObject(id);
+
+                Render.Camera.InitModel(Setup.Setup.BoundingBox);
+            }
+            else
+                ViewObject.PhysicsObj.destroy_particle_manager();
 
             ModelType = ModelType.Setup;
+
             MainWindow.Status.WriteLine($"Loading {id:X8} with ClothingBase {clothingBase.Id:X8}, PaletteTemplate {palTemplate}, and Shade {shade}");
         }
 
@@ -140,9 +166,24 @@ namespace ACViewer
             ModelType = ModelType.EnvCell;
         }
 
+        public void LoadScript(uint scriptID)
+        {
+            var createParticleHooks = ParticleViewer.Instance.GetCreateParticleHooks(scriptID, 1.0f);
+
+            ViewObject.PhysicsObj.destroy_particle_manager();
+            
+            foreach (var createParticleHook in createParticleHooks)
+            {
+                ViewObject.PhysicsObj.create_particle_emitter(createParticleHook.EmitterInfoId, (int)createParticleHook.PartIndex, new AFrame(createParticleHook.Offset), (int)createParticleHook.EmitterId);
+            }
+        }
+
         public void InitObject(uint setupID)
         {
             ViewObject = new ViewObject(setupID);
+
+            if (Setup.Setup._setup.DefaultScript != 0)
+                LoadScript(Setup.Setup._setup.DefaultScript);
         }
 
         public void DoStance(MotionStance stance)
@@ -192,8 +233,12 @@ namespace ACViewer
 
         public void DrawModel()
         {
-            if (Setup != null)
-                Setup.Draw(PolyIdx);
+            if (Setup == null) return;
+
+            Setup.Draw(PolyIdx);
+
+            if (ViewObject.PhysicsObj.ParticleManager != null)
+                ParticleViewer.Instance.DrawParticles(ViewObject.PhysicsObj);
         }
 
         public void DrawEnvironment()

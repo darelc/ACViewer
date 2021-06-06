@@ -150,14 +150,14 @@ namespace ACViewer.View
             else if (selected.ID == 0xFFFF)
             {
                 FileIDs = DatManager.CellDat.AllFiles.Keys.Where(i => (i & 0xFFFF) == selected.ID).OrderBy(i => i).Select(i => i.ToString("X8")).ToList();
-                GameView.ViewMode = ViewMode.Map;
+                MapViewer.Instance.Init();
             }
 
             // landblock info
             else if (selected.ID == 0xFFFE)
             {
                 FileIDs = DatManager.CellDat.AllFiles.Keys.Where(i => (i & 0xFFFF) == selected.ID).OrderBy(i => i).Select(i => i.ToString("X8")).ToList();
-                GameView.ViewMode = ViewMode.Map;
+                MapViewer.Instance.Init();
             }
             // envcell
             else if (selected.ID == 0x100)
@@ -235,9 +235,9 @@ namespace ACViewer.View
                 case 0x02:
                     var setup = DatManager.PortalDat.ReadFromDat<SetupModel>(fileID);
                     FileInfo.SetInfo(new Setup(setup).BuildTree());
-                    MotionList.OnClickSetup(fileID);
                     GameView.ViewMode = ViewMode.Model;
                     ModelViewer.LoadModel(fileID);
+                    MotionList.OnClickSetup(fileID);
                     break;
                 case 0x03:
                     var anim = DatManager.PortalDat.ReadFromDat<ACE.DatLoader.FileTypes.Animation>(fileID);
@@ -362,10 +362,8 @@ namespace ACViewer.View
                 case 0x10:
                     var clothing = DatManager.PortalDat.ReadFromDat<ACE.DatLoader.FileTypes.ClothingTable>(fileID);
                     FileInfo.SetInfo(new FileTypes.ClothingTable(clothing).BuildTree());
-                    ClothingTableList.OnClickClothingBase(clothing, fileID);
                     GameView.ViewMode = ViewMode.Model;
-                    ClothingTableList.LoadModelWithClothingBase();
-                    //ModelViewer.LoadModel(fileID);
+                    ClothingTableList.OnClickClothingBase(clothing, fileID);
                     break;
                 case 0x11:
                     var degradeInfo = DatManager.PortalDat.ReadFromDat<GfxObjDegradeInfo>(fileID);
@@ -406,11 +404,14 @@ namespace ACViewer.View
                 case 0x32:
                     var emitterInfo = DatManager.PortalDat.ReadFromDat<ACE.DatLoader.FileTypes.ParticleEmitterInfo>(fileID);
                     FileInfo.SetInfo(new FileTypes.ParticleEmitterInfo(emitterInfo).BuildTree());
+                    ParticleViewer.Player.PhysicsObj.ParticleManager.ParticleTable.Clear();
                     ParticleViewer.Instance.InitEmitter(fileID, 1.0f);
                     break;
                 case 0x33:
                     var playScript = DatManager.PortalDat.ReadFromDat<ACE.DatLoader.FileTypes.PhysicsScript>(fileID);
                     FileInfo.SetInfo(new FileTypes.PhysicsScript(playScript).BuildTree());
+                    ParticleViewer.Player.PhysicsObj.ParticleManager.ParticleTable.Clear();
+                    ParticleViewer.Instance.InitEmitter(fileID, 1.0f);
                     break;
                 case 0x34:
                     var pScriptTable = DatManager.PortalDat.ReadFromDat<ACE.DatLoader.FileTypes.PhysicsScriptTable>(fileID);

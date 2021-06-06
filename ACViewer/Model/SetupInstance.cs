@@ -42,10 +42,6 @@ namespace ACViewer.Model
         /// <summary>
         /// For loading a SetupInstance with a Clothing Base
         /// </summary>
-        /// <param name="setupID"></param>
-        /// <param name="clothingBase"></param>
-        /// <param name="palTemplate"></param>
-        /// <param name="shade"></param>
         public SetupInstance(uint setupID, FileTypes.ObjDesc objDesc, Dictionary<int, uint> customPaletteColors)
         {
             Setup = new Setup(setupID, objDesc, customPaletteColors);
@@ -104,7 +100,7 @@ namespace ACViewer.Model
             var curPolyIdx = 0;
             for (var i = 0; i < Setup.Parts.Count; i++)
             {
-                var placementFrame = Setup.PlacementFrames[i];
+                //var placementFrame = Setup.PlacementFrames[i];
                 var part = Setup.Parts[i];
 
                 var partFrame = physParts[i].Pos.Frame;

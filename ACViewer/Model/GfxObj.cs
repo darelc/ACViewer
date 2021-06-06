@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ACE.DatLoader;
@@ -61,11 +62,15 @@ namespace ACViewer.Model
 
         public void BuildVertexBuffer()
         {
+            // bad data 02001C50
+            if (VertexArray.Count == 0)
+                return;
+            
             VertexBuffer = new VertexBuffer(GraphicsDevice, typeof(VertexPositionNormalTexture), VertexArray.Count, BufferUsage.WriteOnly);
             VertexBuffer.SetData(VertexArray.ToArray());
         }
 
-        public void LoadTextures()
+        public void LoadTextures(List<ACE.DatLoader.Entity.TextureMapChange> textureChanges = null, Dictionary<int, uint> customPaletteColors = null, bool useCache = true)
         {
             Textures = new List<Texture2D>();
             Surfaces = new List<Surface>();
@@ -75,20 +80,19 @@ namespace ACViewer.Model
                 var surface = DatManager.PortalDat.ReadFromDat<Surface>(surfaceID);
                 Surfaces.Add(surface);
 
-                Textures.Add(TextureCache.Get(surfaceID));
+                Textures.Add(TextureCache.Get(surfaceID, textureChanges, customPaletteColors, useCache));
             }
         }
-        public void LoadTextures(List<ACE.DatLoader.Entity.TextureMapChange> textureChanges, Dictionary<int, uint> customPaletteColors)
+
+        public List<Vector3> GetVertices()
         {
-            Textures = new List<Texture2D>();
-            Surfaces = new List<Surface>();
+            return VertexArray.Select(v => v.Position).ToList();
+        }
 
-            foreach (var surfaceID in _gfxObj.Surfaces)
-            {
-                var surface = DatManager.PortalDat.ReadFromDat<Surface>(surfaceID);
-
-                Textures.Add(TextureCache.Get(surfaceID, textureChanges, customPaletteColors, false));
-            }
+        public void BuildBoundingBox()
+        {
+            var verts = GetVertices();
+            BoundingBox = new BoundingBox(verts);
         }
     }
 }

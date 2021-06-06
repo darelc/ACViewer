@@ -18,7 +18,7 @@ namespace ACViewer.FileTypes
         {
             RawToInterpreted = new Dictionary<ushort, MotionCommand>();
 
-            var interpretedCommands = Enum.GetValues(typeof(MotionCommand));
+            var interpretedCommands = System.Enum.GetValues(typeof(MotionCommand));
             foreach (var interpretedCommand in interpretedCommands)
                 RawToInterpreted.Add((ushort)(uint)interpretedCommand, (MotionCommand)interpretedCommand);
         }
@@ -52,7 +52,7 @@ namespace ACViewer.FileTypes
 
             foreach (var cycle in _motionTable.Cycles.Keys)
             {
-                if (stance != MotionStance.Invalid && (cycle >> 16) != ((uint)stance & 0xFFFF))
+                if ((cycle >> 16) != ((uint)stance & 0xFFFF))
                     continue;
 
                 var rawCommand = (ushort)(cycle & 0xFFFF);
@@ -61,6 +61,25 @@ namespace ACViewer.FileTypes
                 if (!commands.Contains(motionCommand))
                     commands.Add(motionCommand);
             }
+
+            foreach (var kvp in _motionTable.Links)
+            {
+                var stanceMotion = kvp.Key;
+                var links = kvp.Value;
+
+                if ( (stanceMotion >> 16) != ((uint)stance & 0xFFFF))
+                    continue;
+
+                foreach (var link in links.Keys)
+                {
+                    var rawCommand = (ushort)(link & 0xFFFF);
+                    var motionCommand = RawToInterpreted[rawCommand];
+
+                    if (!commands.Contains(motionCommand))
+                        commands.Add(motionCommand);
+                }
+            }
+
             return commands.ToList();
         }
 
@@ -72,35 +91,35 @@ namespace ACViewer.FileTypes
 
             var styleDefaults = new TreeNode("Style defaults:");
 
-            foreach (var kvp in _motionTable.StyleDefaults)
+            foreach (var kvp in _motionTable.StyleDefaults.OrderBy(i => i.Key))
             {
                 var styleDefault = new TreeNode($"{(MotionCommand)kvp.Key}: {(MotionCommand)kvp.Value}");
                 styleDefaults.Items.Add(styleDefault);
             }
 
             var cycles = new TreeNode("Cycles:");
-            foreach (var kvp in _motionTable.Cycles)
+            foreach (var kvp in _motionTable.Cycles.OrderBy(i => i.Key))
             {
-                var cycle = new TreeNode($"{kvp.Key:X8}");
+                var cycle = new TreeNode(GetLabel(kvp.Key));
                 cycle.Items.AddRange(new MotionData(kvp.Value).BuildTree());
                 cycles.Items.Add(cycle);
             }
 
             var modifiers = new TreeNode("Modifiers:");
-            foreach (var kvp in _motionTable.Modifiers)
+            foreach (var kvp in _motionTable.Modifiers.OrderBy(i => i.Key))
             {
-                var modifier = new TreeNode($"{kvp.Key:X8}");
+                var modifier = new TreeNode(GetLabel(kvp.Key));
                 modifier.Items.AddRange(new MotionData(kvp.Value).BuildTree());
                 modifiers.Items.Add(modifier);
             }
 
             var links = new TreeNode("Links:");
-            foreach (var kvp in _motionTable.Links)
+            foreach (var kvp in _motionTable.Links.OrderBy(i => i.Key))
             {
-                var link = new TreeNode($"{kvp.Key:X8}");
-                foreach (var kvpLink in kvp.Value)
+                var link = new TreeNode(GetLabel(kvp.Key));
+                foreach (var kvpLink in kvp.Value.OrderBy(i => i.Key))
                 {
-                    var motion = new TreeNode($"{(MotionCommand)kvpLink.Key}");
+                    var motion = new TreeNode(GetLabel(kvpLink.Key));
                     motion.Items.AddRange(new MotionData(kvpLink.Value).BuildTree());
                     link.Items.Add(motion);
                 }
@@ -110,6 +129,19 @@ namespace ACViewer.FileTypes
             treeView.Items.AddRange(new List<TreeNode>() { defaultStyle, styleDefaults, cycles, modifiers, links });
 
             return treeView;
+        }
+
+        private static string GetLabel(uint combined)
+        {
+            var stanceKey = (ushort)(combined >> 16);
+            var motionKey = (ushort)combined;
+
+            if (RawToInterpreted.TryGetValue(stanceKey, out var stance) && RawToInterpreted.TryGetValue(motionKey, out var motion))
+                return $"{stance} - {motion}";
+            else if (System.Enum.IsDefined(typeof(MotionCommand), combined))
+                return $"{(MotionCommand)combined}";
+            else
+                return $"{combined:X8}";
         }
     }
 }
