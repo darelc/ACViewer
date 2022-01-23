@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace ACViewer.Entity
 {
@@ -22,7 +18,7 @@ namespace ACViewer.Entity
             var scenes = new TreeNode($"Scenes:");
 
             foreach (var scene in _sceneType.Scenes)
-                scenes.Items.Add(new TreeNode($"{scene:X8}"));
+                scenes.Items.Add(new TreeNode($"{scene:X8}", clickable: true));
 
             return new List<TreeNode>() { sceneTableIdx, scenes };
         }

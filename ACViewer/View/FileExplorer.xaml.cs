@@ -7,13 +7,12 @@ using System.Runtime.CompilerServices;
 using System.Media;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 
 using ACE.DatLoader;
 using ACE.DatLoader.FileTypes;
-using ACE.Entity.Enum;
 
 using ACViewer.Data;
+using ACViewer.Enum;
 using ACViewer.FileTypes;
 
 namespace ACViewer.View
@@ -23,24 +22,28 @@ namespace ACViewer.View
     /// </summary>
     public partial class FileExplorer : UserControl, INotifyPropertyChanged
     {
-        public static MainWindow MainWindow { get => MainWindow.Instance; }
-        public static FileInfo FileInfo { get => FileInfo.Instance; }
-        public static MotionList MotionList { get => MotionList.Instance; }
-        public static ClothingTableList ClothingTableList { get => ClothingTableList.Instance; }
+        public static MainWindow MainWindow => MainWindow.Instance;
+        public static FileInfo FileInfo => FileInfo.Instance;
+        public static MotionList MotionList => MotionList.Instance;
+        public static ClothingTableList ClothingTableList => ClothingTableList.Instance;
 
-        public static GameView GameView { get => GameView.Instance; }
-        public static WorldViewer WorldViewer { get => WorldViewer.Instance; }
-        public static ModelViewer ModelViewer { get => ModelViewer.Instance;  }
-        public static TextureViewer TextureViewer { get => TextureViewer.Instance; }
+        public static GameView GameView => GameView.Instance;
+        public static WorldViewer WorldViewer => WorldViewer.Instance;
+        public static ModelViewer ModelViewer => ModelViewer.Instance;
+        public static TextureViewer TextureViewer => TextureViewer.Instance;
 
         public static List<Entity.FileType> FileTypes { get; set; }
 
-        private List<string> _fileIDs;
+        private List<string> _fileIDs { get; set; }
 
-        public bool PortalMode = true;
+        public bool PortalMode { get; set; } = true;
 
-        public uint Selected_FileID;
-        public static FileExplorer Instance;
+        public uint Selected_FileID { get; set; }
+        public static FileExplorer Instance { get; set; }
+
+        public bool TeleportMode { get; set; }
+
+        public History History { get; set; }
 
         public List<string> FileIDs
         {
@@ -87,7 +90,7 @@ namespace ACViewer.View
                 new Entity.FileType(0x0E000018, "XpTable", typeof(ACE.DatLoader.FileTypes.XpTable)),
                 new Entity.FileType(0x0E00001A, "BadData", typeof(ACE.DatLoader.FileTypes.BadData)),
                 new Entity.FileType(0x0E00001D, "ContractTable", typeof(ACE.DatLoader.FileTypes.ContractTable)),
-                /*new Entity.FileType(0x0E00001E, "TabooTable", typeof(ACE.DatLoader.FileTypes.TabooTable)),*/
+                //new Entity.FileType(0x0E00001E, "TabooTable", typeof(ACE.DatLoader.FileTypes.TabooTable)),
                 new Entity.FileType(0x0E000020, "NameFilters", typeof(ACE.DatLoader.FileTypes.NameFilterTable)),
                 new Entity.FileType(0x0F, "PaletteSet", typeof(ACE.DatLoader.FileTypes.PaletteSet)),
                 new Entity.FileType(0x10, "Clothing", typeof(ACE.DatLoader.FileTypes.ClothingTable)),
@@ -107,6 +110,8 @@ namespace ACViewer.View
 
             DIDTables.Load();
 
+            History = new History();
+
             DataContext = this;
         }
 
@@ -116,6 +121,8 @@ namespace ACViewer.View
                 return;
 
             var selected = (Entity.FileType)FileType.SelectedItem;
+
+            if (selected == null) return;
 
             PortalMode = selected.ID != 0xFFFF && selected.ID != 0xFFFE && selected.ID != 0x100;
 
@@ -181,6 +188,7 @@ namespace ACViewer.View
             if (fileID == 0) return;
 
             Selected_FileID = fileID;
+            History.Add(fileID);
 
             if (PortalMode)
                 ReadPortalFile(fileID);
@@ -220,7 +228,7 @@ namespace ACViewer.View
             }
         }
 
-        public static float PaletteScale = 12.0f;
+        public static readonly float PaletteScale = 12.0f;
 
         public void ReadPortalFile(uint fileID)
         {

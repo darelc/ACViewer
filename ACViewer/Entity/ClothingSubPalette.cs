@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace ACViewer.Entity
 {
@@ -21,7 +17,7 @@ namespace ACViewer.Entity
 
             if (_subPalette.Ranges.Count == 1)
             {
-                var range = new TreeNode($"Range: {new ClothingSubPaletteRange(_subPalette.Ranges[0]).ToString()}");
+                var range = new TreeNode($"Range: {new ClothingSubPaletteRange(_subPalette.Ranges[0])}");
                 treeNode.Add(range);
             }
             else
@@ -33,7 +29,7 @@ namespace ACViewer.Entity
                 treeNode.Add(ranges);
             }
 
-            var paletteSet = new TreeNode($"Palette Set: {_subPalette.PaletteSet:X8}");
+            var paletteSet = new TreeNode($"Palette Set: {_subPalette.PaletteSet:X8}", clickable: true);
             treeNode.Add(paletteSet);
 
             return treeNode;

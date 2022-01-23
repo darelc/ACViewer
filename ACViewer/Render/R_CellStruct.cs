@@ -1,34 +1,30 @@
 ﻿using System;
 using System.Collections.Generic;
-using Microsoft.Xna.Framework;
+
 using Microsoft.Xna.Framework.Graphics;
+
 using ACE.DatLoader.Entity;
-using ACE.DatLoader.FileTypes;
 
 namespace ACViewer.Render
 {
     public class R_CellStruct
     {
-        public static GraphicsDevice GraphicsDevice { get => GameView.Instance.GraphicsDevice; }
-        public static Effect Effect { get => Render.Effect; }
+        public static GraphicsDevice GraphicsDevice => GameView.Instance.GraphicsDevice;
+        public static Effect Effect => Render.Effect;
 
-        public CellStruct CellStruct;
+        public CellStruct CellStruct { get; set; }
 
-        public List<VertexPositionNormalTexture> VertexArray;
-        public List<VertexPositionColor> W_VertexArray;
-        public Dictionary<Tuple<ushort, ushort>, ushort> UVLookup;
+        public List<VertexPositionNormalTexture> VertexArray { get; set; }
+        public List<VertexPositionColor> W_VertexArray { get; set; }
+        public Dictionary<Tuple<ushort, ushort>, ushort> UVLookup { get; set; }
 
-        public List<Model.Polygon> Polygons;
+        public List<Model.Polygon> Polygons { get; set; }
 
-        public VertexBuffer W_VertexBuffer;
-        public VertexBuffer VertexBuffer;
+        public VertexBuffer W_VertexBuffer { get; set; }
+        public VertexBuffer VertexBuffer { get; set; }
 
-        public List<ushort> Indices;
-        public IndexBuffer IndexBuffer;
-
-        public List<Texture2D> Textures;
-
-        public List<Surface> Surfaces;
+        public List<ushort> Indices { get; set; }
+        public IndexBuffer IndexBuffer { get; set; }
 
         public R_CellStruct(CellStruct cellStruct)
         {
@@ -123,7 +119,7 @@ namespace ACViewer.Render
 
                     var indexCnt = polygon.Indices.Count;
                     GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, indexCnt / 3);
-                    DrawCount.NumCellStruct++;
+                    //PerfTimer.NumCellStruct++;
                 }
             }
         }
@@ -140,7 +136,7 @@ namespace ACViewer.Render
 
                 var indexCnt = Indices.Count;
                 GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, indexCnt / 3);
-                DrawCount.NumCellStruct++;
+                //PerfTimer.NumCellStruct++;
             }
         }
     }

@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Documents;
+﻿using System.Collections.Generic;
+
 using ACE.DatLoader;
 using ACE.Entity.Enum;
 
@@ -25,7 +21,7 @@ namespace ACViewer.Entity
             treeNode.Add(new TreeNode($"Name: {_spellBase.Name}"));
             treeNode.Add(new TreeNode($"Description: {_spellBase.Desc}"));
             treeNode.Add(new TreeNode($"School: {_spellBase.School}"));
-            treeNode.Add(new TreeNode($"Icon: 0x{_spellBase.Icon:X8}"));
+            treeNode.Add(new TreeNode($"Icon: {_spellBase.Icon:X8}", clickable: true));
             treeNode.Add(new TreeNode($"Category: {_spellBase.Category}"));
             treeNode.Add(new TreeNode($"Flags: {(SpellFlags)_spellBase.Bitfield}"));
             treeNode.Add(new TreeNode($"BaseMana: {_spellBase.BaseMana}"));

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace ACViewer.Entity
 {
@@ -18,8 +14,8 @@ namespace ACViewer.Entity
         public List<TreeNode> BuildTree()
         {
             var partIdx = new TreeNode($"PartIdx: {_textureChange.PartIndex}");
-            var oldTexture = new TreeNode($"Old Texture: {_textureChange.OldTexture:X8}");
-            var newTexture = new TreeNode($"New Texture: {_textureChange.NewTexture:X8}");
+            var oldTexture = new TreeNode($"Old Texture: {_textureChange.OldTexture:X8}", clickable: true);
+            var newTexture = new TreeNode($"New Texture: {_textureChange.NewTexture:X8}", clickable: true);
 
             return new List<TreeNode>() { partIdx, oldTexture, newTexture };
         }

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace ACViewer.Entity
 {
@@ -10,11 +6,14 @@ namespace ACViewer.Entity
     {
         public string Name { get; set; }
         public List<TreeNode> Items { get; set; }
+        public bool Clickable { get; set; }
 
-        public TreeNode(string name = "", List<TreeNode> items = null)
+        public TreeNode(string name = "", List<TreeNode> items = null, bool clickable = false)
         {
             Name = name;
             Items = items ?? new List<TreeNode>();
+            
+            Clickable = clickable;
         }
     }
 }

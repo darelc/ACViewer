@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+
 using ACE.Entity.Enum;
 
 namespace ACViewer.Entity
@@ -21,13 +18,13 @@ namespace ACViewer.Entity
             var treeNode = new List<TreeNode>();
 
             var name = new TreeNode($"Name: {_hg.Name}");
-            var icon = new TreeNode($"Icon: {_hg.IconImage:X8}");
-            var setup = new TreeNode($"Setup: {_hg.SetupID:X8}");
-            var environment = new TreeNode($"Environment: {_hg.EnvironmentSetupID:X8}");
+            var icon = new TreeNode($"Icon: {_hg.IconImage:X8}", clickable: true);
+            var setup = new TreeNode($"Setup: {_hg.SetupID:X8}", clickable: true);
+            var environment = new TreeNode($"Environment: {_hg.EnvironmentSetupID:X8}", clickable: true);
             var attribCredits = new TreeNode($"Attribute Credits: {_hg.AttributeCredits}");
             var skillCredits = new TreeNode($"Skill Credits: {_hg.SkillCredits}");
-            var primaryStartAreas = new TreeNode($"Primary Start Areas: {String.Join(",", _hg.PrimaryStartAreas)}");
-            var secondaryStartAreas = new TreeNode($"Secondary Start Areas: {String.Join(",", _hg.SecondaryStartAreas)}");
+            var primaryStartAreas = new TreeNode($"Primary Start Areas: {string.Join(",", _hg.PrimaryStartAreas)}");
+            var secondaryStartAreas = new TreeNode($"Secondary Start Areas: {string.Join(",", _hg.SecondaryStartAreas)}");
 
             var skills = new TreeNode("Skills:");
             foreach (var skill in _hg.Skills)

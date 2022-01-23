@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace ACViewer.Entity
 {
@@ -17,7 +13,7 @@ namespace ACViewer.Entity
 
         public List<TreeNode> BuildTree()
         {
-            var soundID = new TreeNode($"Sound ID: {_data.SoundId:X8}");
+            var soundID = new TreeNode($"Sound ID: {_data.SoundId:X8}", clickable: true);
             var priority = new TreeNode($"Priority: {_data.Priority}");
             var probability = new TreeNode($"Probability: {_data.Probability}");
             var volume = new TreeNode($"Volume: {_data.Volume}");

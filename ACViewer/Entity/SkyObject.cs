@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace ACViewer.Entity
 {
@@ -57,13 +53,13 @@ namespace ACViewer.Entity
 
             if (_skyObject.DefaultGFXObjectId != 0)
             {
-                var defaultGfxObjID = new TreeNode($"DefaultGfxObjID: {_skyObject.DefaultGFXObjectId:X8}");
+                var defaultGfxObjID = new TreeNode($"DefaultGfxObjID: {_skyObject.DefaultGFXObjectId:X8}", clickable: true);
                 treeNode.Add(defaultGfxObjID);
             }
 
             if (_skyObject.DefaultPESObjectId != 0)
             {
-                var defaultPESObjID = new TreeNode($"DefaultPESObjID: {_skyObject.DefaultPESObjectId:X8}");
+                var defaultPESObjID = new TreeNode($"DefaultPESObjID: {_skyObject.DefaultPESObjectId:X8}", clickable: true);
                 treeNode.Add(defaultPESObjID);
             }
 

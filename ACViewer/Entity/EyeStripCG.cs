@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace ACViewer.Entity
 {
@@ -21,13 +17,13 @@ namespace ACViewer.Entity
 
             if (_eyeStrip.IconImage != 0)
             {
-                var iconImage = new TreeNode($"Icon: {_eyeStrip.IconImage:X8}");
+                var iconImage = new TreeNode($"Icon: {_eyeStrip.IconImage:X8}", clickable: true);
                 treeNode.Add(iconImage);
             }
 
             if (_eyeStrip.IconImageBald != 0)
             {
-                var iconImageBald = new TreeNode($"Bald Icon: {_eyeStrip.IconImageBald:X8}");
+                var iconImageBald = new TreeNode($"Bald Icon: {_eyeStrip.IconImageBald:X8}", clickable: true);
                 treeNode.Add(iconImageBald);
             }
 

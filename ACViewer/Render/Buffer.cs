@@ -1,25 +1,36 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+
+using ACE.Server.Physics;
+
+using ACViewer.Enum;
 
 namespace ACViewer.Render
 {
     public class Buffer
     {
-        public static GraphicsDevice GraphicsDevice { get => GameView.Instance.GraphicsDevice; }
+        public static GraphicsDevice GraphicsDevice => GameView.Instance.GraphicsDevice;
 
-        public Dictionary<uint, TerrainBatch> TerrainGroups;   // key: surfnum
-        public Dictionary<uint, InstanceBatch> RB_Instances;   // key: setup id
-        //public Dictionary<uint, RenderBatch> RB_EnvCell;     // key: surface id
-        public Dictionary<TextureSet, InstanceBatch> RB_EnvCell;
-        public Dictionary<uint, RenderBatch> RB_StaticObjs;
-        //public Dictionary<uint, InstanceBatch> RB_StaticObjs;
-        //public Dictionary<uint, RenderBatch> RB_Buildings;
-        public Dictionary<uint, InstanceBatch> RB_Buildings;
-        //public Dictionary<uint, RenderBatch> RB_Scenery;
-        public Dictionary<uint, InstanceBatch> RB_Scenery;
+        public Dictionary<uint, TerrainBatch> TerrainGroups { get; set; }   // key: surfnum
+        //public Dictionary<uint, InstanceBatch> RB_Instances { get; set; }   // key: setup id
+
+        //public Dictionary<uint, RenderBatch> RB_EnvCell { get; set; };    // key: surface id
+        public Dictionary<TextureSet, InstanceBatch> RB_EnvCell { get; set; }
+
+        public Dictionary<uint, RenderBatch> RB_StaticObjs { get; set; }
+        //public Dictionary<uint, InstanceBatch> RB_StaticObjs { get; set; }
+
+        //public Dictionary<uint, RenderBatch> RB_Buildings { get; set; }
+        public Dictionary<uint, InstanceBatch> RB_Buildings { get; set; }
+
+        //public Dictionary<uint, RenderBatch> RB_Scenery { get; set; }
+        public Dictionary<uint, InstanceBatch> RB_Scenery { get; set; }
+
+        public ParticleBatch RB_Particles { get; set; }
 
         public static Effect Effect { get => Render.Effect; }
 
@@ -31,7 +42,7 @@ namespace ACViewer.Render
         public void Init()
         {
             TerrainGroups = new Dictionary<uint, TerrainBatch>();
-            RB_Instances = new Dictionary<uint, InstanceBatch>();
+            //RB_Instances = new Dictionary<uint, InstanceBatch>();
             //RB_EnvCell = new Dictionary<uint, RenderBatch>();
             RB_EnvCell = new Dictionary<TextureSet, InstanceBatch>();
             RB_StaticObjs = new Dictionary<uint, RenderBatch>();
@@ -40,6 +51,7 @@ namespace ACViewer.Render
             RB_Buildings = new Dictionary<uint, InstanceBatch>();
             //RB_Scenery = new Dictionary<uint, RenderBatch>();
             RB_Scenery = new Dictionary<uint, InstanceBatch>();
+            RB_Particles = new ParticleBatch();
         }
 
         public void ClearBuffer()
@@ -47,11 +59,12 @@ namespace ACViewer.Render
             foreach (var batch in TerrainGroups.Values)
                 batch.Dispose();
 
-            ClearBuffer(RB_Instances);
+            //ClearBuffer(RB_Instances);
             ClearBuffer(RB_EnvCell);
             ClearBuffer(RB_StaticObjs);
             ClearBuffer(RB_Buildings);
             ClearBuffer(RB_Scenery);
+            ClearBuffer(RB_Particles);
 
             Init();
         }
@@ -72,6 +85,11 @@ namespace ACViewer.Render
         {
             foreach (var batch in batches.Values)
                 batch.Dispose();
+        }
+
+        public void ClearBuffer(ParticleBatch batch)
+        {
+            batch.Dispose();
         }
 
         public void AddOutdoor(R_Landblock landblock)
@@ -124,8 +142,12 @@ namespace ACViewer.Render
                 var part = setup.Parts[i];
                 var vertices = part.VertexArray;
 
-                var frame = obj.PartArray.Parts[i].PhysicsPart.Pos;
+                var frame = setup._setup.Id != 0 ? obj.PartArray.Parts[i].PhysicsPart.Pos : obj.PhysicsObj.Position;
+
                 var transform = frame.ToXna();
+
+                if (i < setup._setup.DefaultScale.Count)
+                    transform = Matrix.CreateScale(setup._setup.DefaultScale[i].ToXna()) * transform;
 
                 foreach (var polygon in part.Polygons)
                 {
@@ -206,7 +228,21 @@ namespace ACViewer.Render
             }
         }
 
-        public static Matrix Buildings = Matrix.CreateTranslation(Vector3.UnitZ * 0.01f);
+        public void AddEmitter(ParticleEmitter emitter)
+        {
+            var setupID = emitter.PhysicsObj.PartArray.Setup._dat.Id;
+
+            //Console.WriteLine($"AddEmitterObj: {setupID:X8}");
+
+            if (setupID != 0)
+            {
+                Console.WriteLine($"Unhandled particle emitter {emitter.Info._info.Id:X8} for GfxObj {setupID:X8}");
+                return;
+            }
+            RB_Particles.AddEmitter(emitter);
+        }
+
+        public static readonly Matrix Buildings = Matrix.CreateTranslation(Vector3.UnitZ * 0.01f);
 
         public void AddEnvCell(R_EnvCell envCell)
         {
@@ -249,7 +285,7 @@ namespace ACViewer.Render
         {
             BuildTerrain();
 
-            BuildBuffer(RB_Instances);
+            //BuildBuffer(RB_Instances);
             BuildBuffer(RB_StaticObjs);
             BuildBuffer(RB_Buildings);
             BuildBuffer(RB_EnvCell);
@@ -283,7 +319,7 @@ namespace ACViewer.Render
             {
                 var gfxObjID = entry.Key;
                 var setupIDs = entry.Value;
-                Console.WriteLine($"{gfxObjID:X8} ({setupIDs.Count}): {String.Join(",", setupIDs.Select(i => i.ToString("X8")))}");
+                Console.WriteLine($"{gfxObjID:X8} ({setupIDs.Count}): {string.Join(",", setupIDs.Select(i => i.ToString("X8")))}");
             }
 
             var s2g_index = SetupToGfxObj(objects);
@@ -293,7 +329,7 @@ namespace ACViewer.Render
             {
                 var setupID = entry.Key;
                 var gfxObjIDs = entry.Value;
-                Console.WriteLine($"{setupID:X8} ({gfxObjIDs.Count}): {String.Join(",", gfxObjIDs.Select(i => i.ToString("X8")))}");
+                Console.WriteLine($"{setupID:X8} ({gfxObjIDs.Count}): {string.Join(",", gfxObjIDs.Select(i => i.ToString("X8")))}");
             }
         }
 
@@ -311,7 +347,7 @@ namespace ACViewer.Render
             {
                 var textureID = entry.Key;
                 var setupIDs = entry.Value;
-                Console.WriteLine($"{textureID:X8} ({setupIDs.Count}): {String.Join(",", setupIDs.Select(i => i.ToString("X8")))}");
+                Console.WriteLine($"{textureID:X8} ({setupIDs.Count}): {string.Join(",", setupIDs.Select(i => i.ToString("X8")))}");
             }
 
             var s2t_index = SetupToTexture(objects);
@@ -321,7 +357,7 @@ namespace ACViewer.Render
             {
                 var setupID = entry.Key;
                 var textureIDs = entry.Value;
-                Console.WriteLine($"{setupID:X8} ({textureIDs.Count}): {String.Join(",", textureIDs.Select(i => i.ToString("X8")))}");
+                Console.WriteLine($"{setupID:X8} ({textureIDs.Count}): {string.Join(",", textureIDs.Select(i => i.ToString("X8")))}");
             }
         }
 
@@ -483,7 +519,7 @@ namespace ACViewer.Render
             var sceneryCnt = QueryBuffer(RB_Scenery, out var nDrawCnt);
             //var envCellCnt = QueryBuffer(RB_EnvCell);
             var envCellCnt = QueryBuffer(RB_EnvCell, out var eDrawCnt);
-            var instanceCnt = QueryBuffer(RB_Instances, out var drawCnt);
+            //var instanceCnt = QueryBuffer(RB_Instances, out var drawCnt);
 
             Console.WriteLine($"Terrain: {terrainCnt:N0} / {TerrainGroups.Count:N0}");
             Console.WriteLine($"StaticObjs: {staticObjCnt:N0} / {RB_StaticObjs.Count:N0}");
@@ -494,7 +530,8 @@ namespace ACViewer.Render
             Console.WriteLine($"Scenery: {sceneryCnt:N0} / {RB_Scenery.Count:N0} / {nDrawCnt:N0}");
             //Console.WriteLine($"EnvCells: {envCellCnt:N0} / {RB_EnvCell.Count:N0}");
             Console.WriteLine($"EnvCells: {envCellCnt:N0} / {RB_EnvCell.Count:N0} / {eDrawCnt:N0}");
-            Console.WriteLine($"Instances: {instanceCnt:N0} / {RB_Instances.Count:N0} / {drawCnt:N0}");
+            //Console.WriteLine($"Instances: {instanceCnt:N0} / {RB_Instances.Count:N0} / {drawCnt:N0}");
+            Console.WriteLine();
         }
 
         public int QueryBuffer(Dictionary<uint, RenderBatch> buffer)
@@ -555,6 +592,11 @@ namespace ACViewer.Render
                 batch.OnCompleted();
         }
 
+        public void BuildParticleBuffer()
+        {
+            RB_Particles.OnCompleted();
+        }
+
         public static void SetRasterizerState(CullMode cullMode = CullMode.CullClockwiseFace)
         {
             var rs = new RasterizerState();
@@ -573,13 +615,17 @@ namespace ACViewer.Render
             Effect.Parameters["xLightDirection"].SetValue(-Vector3.UnitZ);
             Effect.Parameters["xAmbient"].SetValue(0.5f);
 
+            PerfTimer.Start(ProfilerSection.Draw);
+            
             DrawTerrain();
 
             DrawBuffer(RB_StaticObjs);
             DrawBuffer(RB_Buildings);
             DrawBuffer(RB_EnvCell, true);
             DrawBuffer(RB_Scenery);
-            DrawBuffer(RB_Instances);
+            //DrawBuffer(RB_Instances);
+
+            PerfTimer.Stop(ProfilerSection.Draw);
         }
 
         public void DrawTerrain()
@@ -625,6 +671,20 @@ namespace ACViewer.Render
 
             foreach (var batch in batches.Values)
                 batch.Draw();
+        }
+
+        public void UpdateParticles()
+        {
+            RB_Particles.UpdateBuffers();
+        }
+
+        public void DrawParticles()
+        {
+            SetRasterizerState(CullMode.None);
+
+            Effect.CurrentTechnique = Effect.Techniques["ParticleInstance"];
+
+            RB_Particles.Draw();
         }
     }
 }

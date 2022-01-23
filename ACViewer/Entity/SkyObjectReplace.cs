@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace ACViewer.Entity
 {
@@ -24,7 +20,7 @@ namespace ACViewer.Entity
 
             if (_skyObjReplace.GFXObjId != 0)
             {
-                var gfxObjID = new TreeNode($"GfxObjID: {_skyObjReplace.GFXObjId:X8}");
+                var gfxObjID = new TreeNode($"GfxObjID: {_skyObjReplace.GFXObjId:X8}", clickable: true);
                 treeNode.Add(gfxObjID);
             }
 

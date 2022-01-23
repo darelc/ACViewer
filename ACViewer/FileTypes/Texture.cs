@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+
 using ACViewer.Entity;
 
 namespace ACViewer.FileTypes
@@ -27,6 +24,9 @@ namespace ACViewer.FileTypes
             var size = new TreeNode($"Size: {_texture.Length} bytes");
 
             treeView.Items.AddRange(new List<TreeNode>() { unknown, width, height, format, size });
+
+            if (_texture.DefaultPaletteId != null)
+                treeView.Items.Add(new TreeNode($"DefaultPalette: {_texture.DefaultPaletteId:X8}", clickable: true));
 
             return treeView;
         }

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace ACViewer.Entity
 {
@@ -18,8 +14,8 @@ namespace ACViewer.Entity
         public List<TreeNode> BuildTree()
         {
             var name = new TreeNode($"Name: {_gear.Name}");
-            var clothingTable = new TreeNode($"Clothing Table: {_gear.ClothingTable:X8}");
-            var weenieDefault = new TreeNode($"Weenie Default: {_gear.WeenieDefault:X8}");
+            var clothingTable = new TreeNode($"Clothing Table: {_gear.ClothingTable:X8}", clickable: true);
+            var weenieDefault = new TreeNode($"Weenie Default: {_gear.WeenieDefault}");
 
             return new List<TreeNode>() { name, clothingTable, weenieDefault };
         }

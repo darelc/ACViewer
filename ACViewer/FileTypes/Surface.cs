@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ACE.Entity.Enum;
+﻿using ACE.Entity.Enum;
+
 using ACViewer.Entity;
 
 namespace ACViewer.FileTypes
@@ -31,12 +27,12 @@ namespace ACViewer.FileTypes
 
             if (_surface.Type.HasFlag(SurfaceType.Base1Image) || _surface.Type.HasFlag(SurfaceType.Base1ClipMap))
             {
-                var origTextureID = new TreeNode($"Texture ID: {_surface.OrigTextureId:X8}");
+                var origTextureID = new TreeNode($"Surface Texture: {_surface.OrigTextureId:X8}", clickable: true);
                 treeView.Items.Add(origTextureID);
 
                 if (_surface.OrigPaletteId != 0)
                 {
-                    var origPaletteID = new TreeNode($"Palette ID: {_surface.OrigPaletteId:X8}");
+                    var origPaletteID = new TreeNode($"Palette: {_surface.OrigPaletteId:X8}, ", clickable: true);
                     treeView.Items.Add(origPaletteID);
                 }
             }

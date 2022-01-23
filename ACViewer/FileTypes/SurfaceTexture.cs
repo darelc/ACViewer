@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+
 using ACViewer.Entity;
 
 namespace ACViewer.FileTypes
@@ -25,7 +22,7 @@ namespace ACViewer.FileTypes
 
             var textures = new TreeNode("Textures:");
             foreach (var textureID in _surfaceTexture.Textures)
-                textures.Items.Add(new TreeNode($"{textureID:X8}"));
+                textures.Items.Add(new TreeNode($"{textureID:X8}", clickable: true));
 
             treeView.Items.AddRange(new List<TreeNode>() { unknown, unknownByte, textures });
 

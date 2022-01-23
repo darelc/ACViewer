@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace ACViewer.Entity
 {
@@ -17,7 +13,7 @@ namespace ACViewer.Entity
 
         public List<TreeNode> BuildTree()
         {
-            var animID = new TreeNode($"AnimID: {_animData.AnimId:X8}");
+            var animID = new TreeNode($"AnimID: {_animData.AnimId:X8}", clickable: true);
             var lowFrame = new TreeNode($"Low frame: {_animData.LowFrame}");
             var highFrame = new TreeNode($"High frame: {_animData.HighFrame}");
             var framerate = new TreeNode($"Framerate: {_animData.Framerate}");

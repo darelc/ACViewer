@@ -7,13 +7,11 @@ using System.Windows.Input;
 namespace ACViewer.View
 {
     /// <summary>
-    /// Interaction logic for Particle.xaml
+    /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
-        public static MainWindow Instance;
-
-        public GameView GameView => GameView.Instance;
+        public static MainWindow Instance { get; set; }
 
         public MainWindow()
         {
@@ -24,7 +22,7 @@ namespace ACViewer.View
             //WpfGame.UseASingleSharedGraphicsDevice = true;
         }
 
-        private DateTime lastUpdateTime;
+        private DateTime lastUpdateTime { get; set; }
 
         private static readonly TimeSpan maxUpdateInterval = TimeSpan.FromMilliseconds(1000);
 
@@ -32,7 +30,7 @@ namespace ACViewer.View
 
         private static readonly int maxLines = 100;
 
-        private bool pendingUpdate;
+        private bool pendingUpdate { get; set; }
 
         public async void AddStatusText(string line)
         {
@@ -63,6 +61,21 @@ namespace ACViewer.View
         {
             var finder = new Finder();
             finder.ShowDialog();
+        });
+
+        public ICommand TeleportCommand { get; } = new ActionCommand(() =>
+        {
+            var teleport = new Teleport();
+            teleport.ShowDialog();
+        });
+
+        public ICommand HistoryCommand { get; } = new ActionCommand(() =>
+        {
+            var prevDID = FileExplorer.Instance.History.Pop();
+
+            if (prevDID == null) return;
+
+            Finder.Navigate(prevDID.Value.ToString("X8"));
         });
     }
 }

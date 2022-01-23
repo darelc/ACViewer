@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ACViewer.Entity;
+﻿using ACViewer.Entity;
 
 namespace ACViewer.FileTypes
 {
@@ -21,6 +16,18 @@ namespace ACViewer.FileTypes
             var treeView = new TreeNode($"{_info.Id:X8}");
 
             var numCells = new TreeNode($"NumCells: {_info.NumCells}");
+            
+            if (_info.NumCells > 0)
+            {
+                var landblock = _info.Id & 0xFFFF0000;
+
+                for (var i = 0; i < _info.NumCells; i++)
+                {
+                    var objCellID = landblock + 0x100 + i;
+                    numCells.Items.Add(new TreeNode($"{objCellID:X8}", clickable: true));
+                }
+            }
+
             treeView.Items.Add(numCells);
 
             if (_info.Objects.Count != 0)
@@ -29,7 +36,7 @@ namespace ACViewer.FileTypes
                 foreach (var stab in _info.Objects)
                 {
                     var stabTree = new Stab(stab).BuildTree();
-                    var obj = new TreeNode($"{stabTree[0].Name.Replace("ID: ", "")}");
+                    var obj = new TreeNode($"{stabTree[0].Name.Replace("ID: ", "")}", clickable: true);
                     stabTree.RemoveAt(0);
                     obj.Items.AddRange(stabTree);
 

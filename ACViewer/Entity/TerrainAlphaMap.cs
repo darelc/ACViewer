@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace ACViewer.Entity
 {
@@ -18,7 +14,7 @@ namespace ACViewer.Entity
         public List<TreeNode> BuildTree()
         {
             var terrainCode = new TreeNode($"TerrainCode: {_terrainAlphaMap.TCode}");
-            var textureGID = new TreeNode($"TextureGID: {_terrainAlphaMap.TexGID:X8}");
+            var textureGID = new TreeNode($"TextureGID: {_terrainAlphaMap.TexGID:X8}", clickable: true);
 
             return new List<TreeNode>() { terrainCode, textureGID };
         }

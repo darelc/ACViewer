@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace ACViewer.Entity
 {
@@ -17,7 +13,7 @@ namespace ACViewer.Entity
 
         public List<TreeNode> BuildTree()
         {
-            var id = new TreeNode($"ID: {_gfxObjInfo.Id:X8}");
+            var id = new TreeNode($"ID: {_gfxObjInfo.Id:X8}", clickable: true);
             var degradeMode = new TreeNode($"DegradeMode: {_gfxObjInfo.DegradeMode}");
             var minDist = new TreeNode($"MinDist: {_gfxObjInfo.MinDist}");
             var idealDist = new TreeNode($"IdealDist: {_gfxObjInfo.IdealDist}");
