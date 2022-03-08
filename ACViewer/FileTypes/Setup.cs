@@ -26,8 +26,8 @@ namespace ACViewer.FileTypes
                 treeView.Items.Add(flags);
 
             var parts = new TreeNode("Parts:");
-            foreach (var part in _setup.Parts)
-                parts.Items.Add(new TreeNode($"{part:X8}", clickable: true));
+            for (var i = 0; i < _setup.Parts.Count; i++)
+                parts.Items.Add(new TreeNode($"{i} - {_setup.Parts[i]:X8}", clickable: true));
 
             treeView.Items.Add(parts);
 
@@ -113,11 +113,16 @@ namespace ACViewer.FileTypes
             if (_setup.Lights.Count > 0)
             {
                 var lights = new TreeNode("Lights:");
+
                 foreach (var kvp in _setup.Lights)
                 {
-                    var light = new TreeNode($"{kvp.Key}: {new LightInfo(kvp.Value)}");
+                    var light = new TreeNode($"{kvp.Key}");
+
+                    light.Items = new LightInfo(kvp.Value).BuildTree();
+
                     lights.Items.Add(light);
                 }
+
                 treeView.Items.Add(lights);
             }
 

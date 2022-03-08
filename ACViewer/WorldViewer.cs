@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Xna.Framework;
@@ -34,28 +33,37 @@ namespace ACViewer
 
         public WpfKeyboard Keyboard => GameView.Instance._keyboard;
 
-        public KeyboardState PrevKeyboardState
-        {
-            get => GameView.Instance.PrevKeyboardState;
-            set => GameView.Instance.PrevKeyboardState = value;
-        }
+        public KeyboardState PrevKeyboardState => GameView.Instance.PrevKeyboardState;
 
         public bool DungeonMode { get; set; }
 
         public Model.BoundingBox BoundingBox { get; set; }
 
+        public uint SingleBlock { get; set; }
+
+        public bool InitPlayerMode { get; set; }
+        
         public WorldViewer()
         {
+            if (Instance != null && Instance.PlayerMode)
+            {
+                Instance.ExitPlayerMode();
+                InitPlayerMode = true;
+            }
+
             Instance = this;
-            
-            Physics = new PhysicsEngine(new ObjectMaint(), new SmartBox());
-            
-            Physics.Server = false;
         }
 
         public void LoadLandblock(uint landblockID, uint radius = 1)
         {
+            if (PlayerMode)
+            {
+                ExitPlayerMode();
+                InitPlayerMode = true;
+            }
+
             Render.Buffer.ClearBuffer();
+            Server.Init();
             TextureCache.Init();
 
             LScape.unload_landblocks_all();
@@ -105,6 +113,9 @@ namespace ACViewer
             if (FileExplorer.Instance.TeleportMode)
             {
                 var zBump = DungeonMode ? 1.775f : 2.775f;
+
+                if (InitPlayerMode)
+                    zBump = 0.0f;
                 
                 Camera.InitTeleport(centerBlock, zBump);
                 FileExplorer.Instance.TeleportMode = false;
@@ -117,12 +128,24 @@ namespace ACViewer
             else
                 Camera.InitLandblock(r_landblock);
 
+            SingleBlock = landblock.ID;
+
             FreeResources();
+
+            Server.OnLoadWorld();
         }
 
         public async void LoadLandblocks(Vector2 startBlock, Vector2 endBlock)
         {
+            //Console.WriteLine($"LoadLandblocks({startBlock}, {endBlock})");
+            if (PlayerMode)
+            {
+                ExitPlayerMode();
+                InitPlayerMode = true;
+            }
+
             Render.Buffer.ClearBuffer();
+            Server.Init();
             TextureCache.Init();
             
             LScape.unload_landblocks_all();
@@ -140,7 +163,7 @@ namespace ACViewer
             var landblockID = centerX << 24 | centerY << 16 | 0xFFFF;
 
             MainWindow.Status.WriteLine($"Loading {numBlocks} landblocks");
-            await Task.Run(() => Thread.Sleep(50));
+            await Task.Delay(1);
 
             //Landblocks = new Dictionary<uint, R_Landblock>();
             R_Landblock r_landblock = null;
@@ -178,14 +201,19 @@ namespace ACViewer
             Camera.InitLandblock(centerBlock);
             GameView.ViewMode = ViewMode.World;
 
+            SingleBlock = uint.MaxValue;
+
             FreeResources();
+
+            Server.OnLoadWorld();
         }
 
         public void FreeResources()
         {
-            R_Landblock.Init();
             TextureCache.Init(false);
         }
+
+        public bool PlayerMode { get; set; }
 
         public void Update(GameTime time)
         {
@@ -206,12 +234,84 @@ namespace ACViewer
                 ShowLocation();
             }
 
-            PrevKeyboardState = keyboardState;
+            if (!keyboardState.IsKeyDown(Keys.LeftControl) && keyboardState.IsKeyDown(Keys.C) && !PrevKeyboardState.IsKeyDown(Keys.C))
+            {
+                Picker.ClearSelection();
+            }
 
-            if (Camera != null)
+            if (GameView.ViewMode == ViewMode.World && (keyboardState.IsKeyDown(Keys.P) && !PrevKeyboardState.IsKeyDown(Keys.P) || InitPlayerMode))
+            {
+                if (!PlayerMode)
+                    EnterPlayerMode();
+                else
+                    ExitPlayerMode();
+
+                InitPlayerMode = false;
+            }
+
+            if (keyboardState.IsKeyDown(Keys.D1) && !PrevKeyboardState.IsKeyDown(Keys.D1))
+            {
+                ACViewer.Render.Buffer.drawTerrain = !ACViewer.Render.Buffer.drawTerrain;
+            }
+
+            if (keyboardState.IsKeyDown(Keys.D2) && !PrevKeyboardState.IsKeyDown(Keys.D2))
+            {
+                ACViewer.Render.Buffer.drawEnvCells = !ACViewer.Render.Buffer.drawEnvCells;
+            }
+
+            if (keyboardState.IsKeyDown(Keys.D3) && !PrevKeyboardState.IsKeyDown(Keys.D3))
+            {
+                ACViewer.Render.Buffer.drawStaticObjs = !ACViewer.Render.Buffer.drawStaticObjs;
+            }
+
+            if (keyboardState.IsKeyDown(Keys.D4) && !PrevKeyboardState.IsKeyDown(Keys.D4))
+            {
+                ACViewer.Render.Buffer.drawBuildings = !ACViewer.Render.Buffer.drawBuildings;
+            }
+
+            if (keyboardState.IsKeyDown(Keys.D5) && !PrevKeyboardState.IsKeyDown(Keys.D5))
+            {
+                ACViewer.Render.Buffer.drawScenery = !ACViewer.Render.Buffer.drawScenery;
+            }
+
+            if (keyboardState.IsKeyDown(Keys.D6) && !PrevKeyboardState.IsKeyDown(Keys.D6))
+            {
+                MainMenu.ToggleParticles();
+            }
+
+            if (keyboardState.IsKeyDown(Keys.D7) && !PrevKeyboardState.IsKeyDown(Keys.D7))
+            {
+                ACViewer.Render.Buffer.drawInstances = !ACViewer.Render.Buffer.drawInstances;
+            }
+
+            if (keyboardState.IsKeyDown(Keys.D8) && !PrevKeyboardState.IsKeyDown(Keys.D8))
+            {
+                ACViewer.Render.Buffer.drawEncounters = !ACViewer.Render.Buffer.drawEncounters;
+            }
+
+            if (keyboardState.IsKeyDown(Keys.D0) && !PrevKeyboardState.IsKeyDown(Keys.D0))
+            {
+                ACViewer.Render.Buffer.drawAlpha = !ACViewer.Render.Buffer.drawAlpha;
+            }
+
+            if (keyboardState.IsKeyDown(Keys.LeftControl) && keyboardState.IsKeyDown(Keys.V) && !PrevKeyboardState.IsKeyDown(Keys.V))
+            {
+                Picker.AddVisibleCells();
+            }
+
+            if (keyboardState.IsKeyDown(Keys.LeftControl) && keyboardState.IsKeyDown(Keys.C) && !PrevKeyboardState.IsKeyDown(Keys.C))
+            {
+                Picker.ShowCollision();
+            }
+
+            if (GameView.ViewMode == ViewMode.World && PlayerMode && Player != null)
+                Player.Update(time);
+            else if (Camera != null)
                 Camera.Update(time);
 
             Render.UpdateEmitters();
+
+            Server.Update();
 
             if (PerfTimer.Update())
             {
@@ -221,8 +321,9 @@ namespace ACViewer
 
         public void ShowLocation()
         {
-            var pos = Camera.GetPosition() ?? "unknown";
-            MainWindow.Status.WriteLine($"Location: {pos}");
+            var pos = Camera.GetPosition();
+
+            MainWindow.Status.WriteLine($"Location: {pos?.ToString() ?? "unknown"}");
         }
 
         public void Draw(GameTime time)
@@ -232,6 +333,60 @@ namespace ACViewer
 
             if (MainMenu.ShowHUD)
                 Render.DrawHUD();
+
+            if (Player != null && PlayerMode)
+                Player.Draw();
+        }
+
+        public Player Player { get; set; }
+
+        public bool EnterPlayerMode()
+        {
+            Player = new Player(true);
+
+            // location = current camera location
+            var cameraPos = Camera.GetPosition();
+
+            if (cameraPos == null)
+            {
+                Console.WriteLine($"WorldViewer.EnterPlayerMode() - camera position null!");
+                return false;
+            }
+
+            var success = Player.WorldObject.AddPhysicsObj(cameraPos);
+
+            if (!success)
+            {
+                Console.WriteLine($"WorldViewer.EnterPlayerMode() - AddPhysicsObj({cameraPos}) failed");
+                return false;
+            }
+
+            var r_PhysicsObj = new R_PhysicsObj(Player.PhysicsObj);
+            Buffer.AddPlayer(r_PhysicsObj);
+
+            Buffer.BuildTextureAtlases(Buffer.AnimatedTextureAtlasChains);
+            Buffer.BuildBuffer(Buffer.RB_Animated);
+
+            Camera.Locked = true;
+
+            PlayerMode = true;
+            
+            return true;
+        }
+
+        public void ExitPlayerMode()
+        {
+            Camera.Locked = false;
+            Camera.Dir = Vector3.Transform(Vector3.UnitY, Player.PhysicsObj.Position.Frame.Orientation.ToXna());
+            PlayerMode = false;
+            Player = null;
+
+            Buffer.ClearBuffer(Buffer.RB_Animated);
+            Buffer.RB_Animated = new Dictionary<GfxObjTexturePalette, GfxObjInstance_Shared>();
+
+            // clean this up
+            if (GameView.WorldViewer != null && GameView.WorldViewer != this)
+                GameView.WorldViewer.ExitPlayerMode();
         }
     }
 }

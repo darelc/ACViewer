@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 using Microsoft.Xna.Framework.Graphics;
 
@@ -8,69 +7,60 @@ namespace ACViewer.Render
 {
     public class TerrainBatch
     {
-        public static GraphicsDevice GraphicsDevice => GameView.Instance.GraphicsDevice;
+        public static Effect Effect => Render.Effect_Clamp;
 
-        public static Effect Effect => Render.Effect;
+        public TextureAtlasChain OverlayAtlasChain { get; set; }
 
-        public EffectParameters EffectParameters { get; set; }
+        public TextureAtlasChain AlphaAtlasChain { get; set; }
 
-        public List<LandVertex> Vertices { get; set; }
+        public List<TerrainBatchDraw> Batches { get; set; }
 
-        public VertexBuffer VertexBuffer { get; set; }
+        public TerrainBatchDraw CurrentBatch { get; set; }
 
-        public int NumItems { get; set; }
-
-        public TerrainBatch()
+        public TerrainBatch(TextureAtlasChain overlayAtlasChain, TextureAtlasChain alphaAtlasChain)
         {
-            Init();
+            OverlayAtlasChain = overlayAtlasChain;
+
+            AlphaAtlasChain = alphaAtlasChain;
+
+            Batches = new List<TerrainBatchDraw>();
         }
 
-        public void Init()
+        public void AddTerrain(R_Landblock landblock)
         {
-            EffectParameters = new EffectParameters();
-            Vertices = new List<LandVertex>();
+            if (CurrentBatch == null || !CurrentBatch.CanAdd(landblock))
+            {
+                CurrentBatch = new TerrainBatchDraw(OverlayAtlasChain, AlphaAtlasChain);
+                Batches.Add(CurrentBatch);
+            }
+            CurrentBatch.AddTerrain(landblock);
         }
 
-        public TerrainBatch(uint surfnum)
+        public void OnCompleted()
         {
-            Init();
-
-            EffectParameters.Overlays = R_Landblock.LandOverlays[surfnum];
-            EffectParameters.Alphas = R_Landblock.LandAlphas[surfnum];
-        }
-
-        public void AddCell(List<LandVertex> vertices, int polyIdx)
-        {
-            Vertices.AddRange(vertices.Skip(polyIdx * 3).Take(6));
-        }
-
-        public void BuildBuffer()
-        {
-            VertexBuffer = new VertexBuffer(GraphicsDevice, typeof(LandVertex), Vertices.Count, BufferUsage.WriteOnly);
-            VertexBuffer.SetData(Vertices.ToArray());
-
-            NumItems = Vertices.Count / 3;
+            foreach (var batch in Batches)
+                batch.OnCompleted();
         }
 
         public void Draw()
         {
-            GraphicsDevice.SetVertexBuffer(VertexBuffer);
+            Effect.CurrentTechnique = Effect.Techniques["LandscapeSinglePass"];
 
-            Effect.Parameters["xOverlays"].SetValue(EffectParameters.Overlays);
-            Effect.Parameters["xAlphas"].SetValue(EffectParameters.Alphas);
+            // assumed to be at index 0
+            if (OverlayAtlasChain.TextureAtlases.Count > 0)
+                Effect.Parameters["xOverlays"].SetValue(OverlayAtlasChain.TextureAtlases[0]._Textures);
 
-            foreach (EffectPass pass in Effect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
+            if (AlphaAtlasChain.TextureAtlases.Count > 0)
+                Effect.Parameters["xAlphas"].SetValue(AlphaAtlasChain.TextureAtlases[0]._Textures);
 
-                GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, NumItems);
-            }
+            foreach (var batch in Batches)
+                batch.Draw();
         }
 
         public void Dispose()
         {
-            EffectParameters.Dispose();
-            VertexBuffer.Dispose();
+            foreach (var batch in Batches)
+                batch.Dispose();
         }
     }
 }

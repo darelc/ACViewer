@@ -13,6 +13,7 @@ using ACE.Entity.Enum;
 using ACE.Server.Physics;
 using ACE.Server.Physics.Animation;
 
+using ACViewer.Config;
 using ACViewer.Enum;
 using ACViewer.Model;
 using ACViewer.Render;
@@ -133,7 +134,7 @@ namespace ACViewer
 
         public void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(new Color(0, 0, 0));
+            GraphicsDevice.Clear(ConfigManager.Config.BackgroundColors.ParticleViewer);
 
             Effect.CurrentTechnique = Effect.Techniques["ColoredNoShading"];
             Effect.Parameters["xWorld"].SetValue(Matrix.Identity);
@@ -216,9 +217,9 @@ namespace ACViewer
             
             GraphicsDevice.SetVertexBuffer(gfxObj.VertexBuffer);
 
-            var translateWorld = Matrix.CreateScale(part.GfxObjScale.ToXna()) * Matrix.CreateTranslation(part.Pos.Frame.Origin.ToXna()) * Matrix.CreateFromQuaternion(part.Pos.Frame.Orientation.ToXna());
+            var translateWorld = Matrix.CreateScale(part.GfxObjScale.ToXna()) * Matrix.CreateFromQuaternion(part.Pos.Frame.Orientation.ToXna()) * Matrix.CreateTranslation(part.Pos.Frame.Origin.ToXna());
 
-            Effect.CurrentTechnique = Effect.Techniques["TexturedNoShading"];
+            Effect.CurrentTechnique = Effect.Techniques["TexturedNoShadingAlphaOnly"];
             Effect.Parameters["xWorld"].SetValue(translateWorld);
             Effect.Parameters["xOpacity"].SetValue(1.0f - part.CurTranslucency);
 

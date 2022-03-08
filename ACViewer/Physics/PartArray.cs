@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+
 using ACE.DatLoader.Entity;
 using ACE.Entity.Enum;
 using ACE.Server.Physics.Animation;
 using ACE.Server.Physics.Collision;
 using ACE.Server.Physics.Common;
+
+using ACViewer;
 
 namespace ACE.Server.Physics
 {
@@ -147,9 +150,26 @@ namespace ACE.Server.Physics
 
         public TransitionState FindObjCollisions(Transition transition)
         {
-            foreach (var part in Parts)
+            for (var i = 0; i < Parts.Count; i++)
             {
-                var result = part.FindObjCollisions(transition);
+                var part = Parts[i];
+
+                var result = part.FindObjCollisions(transition, i);
+
+                if (result != TransitionState.OK)
+                    return result;
+            }
+            return TransitionState.OK;
+        }
+
+        public TransitionState FindObjCollisions_Draw(Transition transition)
+        {
+            for (var i = 0; i < Parts.Count; i++)
+            {
+                var part = Parts[i];
+
+                var result = part.FindObjCollisions_Draw(transition, i);
+
                 if (result != TransitionState.OK)
                     return result;
             }
@@ -278,8 +298,7 @@ namespace ACE.Server.Physics
                 var animData = new Animation.AnimData();
                 animData.AnimID = Setup._dat.DefaultAnimation;
                 animData.LowFrame = 0;
-                animData.HighFrame = -1;
-                animData.Framerate = 30.0f;
+                animData.HighFrame = Int32.MaxValue;
                 Sequence.append_animation(animData);
                 WeenieDesc.Destroy(animData);
             }
@@ -449,7 +468,7 @@ namespace ACE.Server.Physics
             }
         }
 
-        public bool SetPart(List<DatLoader.Entity.AnimationPartChange> changes)
+        public bool SetPart(List<AnimationPartChange> changes)
         {
             if (Setup == null) return false;
 
@@ -596,14 +615,26 @@ namespace ACE.Server.Physics
         {
             var curFrame = Sequence.GetCurrAnimFrame();
 
-            if (curFrame == null) return;
+            // modified for simple setups, or else only PhysicsObj.Position is set,
+            // and PhysicsPart.Pos doesn't get set
+            var numParts = Parts.Count;
 
-            var numParts = Math.Min(NumParts, curFrame.Frames.Count);
+            if (curFrame != null)
+                numParts = Math.Min(Parts.Count, curFrame.Frames.Count);
 
             for (var i = 0; i < numParts; i++)
-                Parts[i].Pos.Frame.Combine(frame, new AFrame(curFrame.Frames[i]), Scale);
-        }
+            {
+                // should particles have this populated?
+                if (Parts[i] == null) continue;
+                
+                var curPartFrame = curFrame != null ? new AFrame(curFrame.Frames[i]) : new AFrame(Vector3.Zero, Quaternion.Identity);
 
+                Parts[i].Pos.Frame.Combine(frame, curPartFrame, Scale);
+
+                if (Parts[i].Buffer != null)
+                    Parts[i].Buffer.UpdateInstance(Parts[i].BufferIdx, Parts[i].Pos.GetWorldPos(), Parts[i].Pos.Frame.Orientation.ToXna(), Parts[i].GfxObjScale.ToXna());
+            }
+        }
  
         public void UpdateViewerDistance(float cypt, Vector3 heading)
         {

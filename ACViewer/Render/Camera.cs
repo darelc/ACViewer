@@ -6,17 +6,20 @@ using Microsoft.Xna.Framework.Input;
 
 using MonoGame.Framework.WpfInterop.Input;
 
+using ACE.Server.Physics.Animation;
+using ACE.Server.Physics.Common;
+
+using ACViewer.Config;
 using ACViewer.Enum;
+using ACViewer.Extensions;
 using ACViewer.Render;
 using ACViewer.View;
-
-using ACE.Server.Physics.Common;
 
 namespace ACViewer
 {
     public class Camera
     {
-        public GameView GameView;
+        public GameView GameView { get; set; }
 
         public Matrix ViewMatrix { get; set; }
         public Matrix ProjectionMatrix { get; set; }
@@ -27,14 +30,8 @@ namespace ACViewer
 
         public WpfKeyboard Keyboard => GameView._keyboard;
         public WpfMouse Mouse => GameView._mouse;
-        
-        public MouseState PrevMouseState
-        {
-            get => GameView.PrevMouseState;
-            set => GameView.PrevMouseState = value;
-        }
 
-        public int PrevScrollWheelValue { get; set; }
+        public MouseState PrevMouseState => GameView.PrevMouseState;
 
         public float Speed { get; set; } = Model_Speed;
 
@@ -87,7 +84,9 @@ namespace ACViewer
         {
             NearPlane = nearPlane;
             CreateProjection();
+            
             Render.Render.Effect.Parameters["xProjection"].SetValue(ProjectionMatrix);
+            Render.Render.Effect_Clamp.Parameters["xProjection"].SetValue(ProjectionMatrix);
         }
 
         public void InitLandblock(R_Landblock landblock)
@@ -95,8 +94,8 @@ namespace ACViewer
             var x = landblock.Landblock.ID >> 24;
             var y = landblock.Landblock.ID >> 16 & 0xFF;
 
-            var height = landblock.Vertices != null ? landblock.Vertices[0].Position.Z : 0;
-
+            var height = landblock.Landblock.Polygons[0].Vertices[0].Origin.Z;
+            
             Position = new Vector3(x * 192.0f, y * 192.0f, height + 50.0f);
 
             var lookAt = new Vector3(x * 192.0f + 96.0f, y * 192.0f + 96.0f, height);
@@ -161,7 +160,6 @@ namespace ACViewer
 
             CreateLookAt();
         }
-
 
         public void InitModel(Model.BoundingBox box)
         {
@@ -244,6 +242,7 @@ namespace ACViewer
         {
             CreateProjection();
             Render.Render.Effect.Parameters["xProjection"].SetValue(ProjectionMatrix);
+            Render.Render.Effect_Clamp.Parameters["xProjection"].SetValue(ProjectionMatrix);
         }
 
         public Matrix CreateLookAt()
@@ -271,18 +270,21 @@ namespace ACViewer
                  DrawDistance);
         }
 
+        private static readonly float SpeedBase = MathHelper.PiOver4 / 160 / 6;
+
+        public bool Locked { get; set; }
+
+        public System.Windows.Point LastSetPoint { get; set; }
+
         public void Update(GameTime gameTime)
         {
-            if (Mouse == null) return;
+            if (Mouse == null || Locked) return;
 
             var mouseState = Mouse.GetState();
             var keyboardState = Keyboard.GetState();
 
-            if (!GameView.IsActive)
-            {
-                PrevMouseState = mouseState;
-                return;
-            }
+            if (!GameView.IsActive) return;
+
             if (keyboardState.IsKeyDown(Keys.W))
                 Position += Dir * Speed;
             if (keyboardState.IsKeyDown(Keys.S))
@@ -295,42 +297,68 @@ namespace ACViewer
                 Position += Up * Speed;
 
             // camera speed control
-            if (mouseState.ScrollWheelValue != PrevScrollWheelValue)
+            if (mouseState.ScrollWheelValue != PrevMouseState.ScrollWheelValue)
             {
-                var diff = mouseState.ScrollWheelValue - PrevScrollWheelValue;
+                var diff = mouseState.ScrollWheelValue - PrevMouseState.ScrollWheelValue;
+
                 if (diff >= 0)
                     Speed *= SpeedMod;
                 else
                     Speed /= SpeedMod;
+            }
 
-                PrevScrollWheelValue = mouseState.ScrollWheelValue;
+            if (mouseState.LeftButton == ButtonState.Pressed && PrevMouseState.LeftButton != ButtonState.Pressed)
+            {
+                if (GameView.ViewMode == ViewMode.World)
+                    Picker.HandleLeftClick(mouseState.X, mouseState.Y);
             }
 
             if (mouseState.RightButton == ButtonState.Pressed)
             {
                 if (PrevMouseState.RightButton == ButtonState.Pressed)
                 {
+                    MouseEx.GetCursorPos(out var cursorPos);
+                    
+                    var xDiff = cursorPos.X - (int)LastSetPoint.X;
+                    var yDiff = cursorPos.Y - (int)LastSetPoint.Y;
+
+                    if (ConfigManager.Config.Mouse.AltMethod)
+                    {
+                        xDiff = mouseState.X - PrevMouseState.X;
+                        yDiff = mouseState.Y - PrevMouseState.Y;
+                    }
+
                     // yaw / x-rotation
                     Dir = Vector3.Transform(Dir, Matrix.CreateFromAxisAngle(Up,
-                        -MathHelper.PiOver4 / 160 * (mouseState.X - centerX)));
+                        -SpeedBase * ConfigManager.Config.Mouse.Speed * xDiff));
 
                     // pitch / y-rotation
                     Dir = Vector3.Transform(Dir, Matrix.CreateFromAxisAngle(Vector3.Cross(Up, Dir),
-                        MathHelper.PiOver4 / 160 * (mouseState.Y - centerY)));
+                        SpeedBase * ConfigManager.Config.Mouse.Speed * yDiff));
+
+                    if (MainWindow.DebugMode && (xDiff != 0 || yDiff != 0))
+                    {
+                        if (!ConfigManager.Config.Mouse.AltMethod)
+                            Console.WriteLine($"mouseX: {mouseState.X}, mouseY: {mouseState.Y}, centerX: {centerX}, centerY: {centerY}");
+                        else
+                            Console.WriteLine($"xDiff: {xDiff}, yDiff: {yDiff}");
+                    }
                 }
                 else
                 {
                     System.Windows.Input.Mouse.OverrideCursor = Cursors.None;
                 }
                 // there is a delay here, so Mouse.GetState() won't be immediately affected
-                Mouse.SetCursor(centerX, centerY);
+                if (!ConfigManager.Config.Mouse.AltMethod)
+                    LastSetPoint = MouseEx.SetCursor(GameView.Instance, centerX, centerY);
             }
             else if (PrevMouseState.RightButton == ButtonState.Pressed)
             {
-                System.Windows.Input.Mouse.OverrideCursor = Cursors.Arrow;
-            }
+                if (ConfigManager.Config.Mouse.AltMethod)
+                    Mouse.SetCursor(centerX, centerY);
 
-            PrevMouseState = mouseState;
+                System.Windows.Input.Mouse.OverrideCursor = null;
+            }
 
             Dir.Normalize();
 
@@ -340,13 +368,13 @@ namespace ACViewer
             //Console.WriteLine("Camera dir: " + GameView.Instance.Render.Camera.Dir);
         }
 
-        private int centerX => GameView.GraphicsDevice.Viewport.Width / 2;
-        private int centerY => GameView.GraphicsDevice.Viewport.Height / 2;
+        public int centerX => GameView.GraphicsDevice.Viewport.Width / 2;
+        public int centerY => GameView.GraphicsDevice.Viewport.Height / 2;
 
-        public string GetPosition()
+        public Position GetPosition()
         {
             // 255 landblocks across * 192 meters for each landblock = 48,960 meters across Dereth
-            if (Position.X < 0.0f || Position.Y < 0.0f || Position.X > 48960.0f || Position.Y > 48960.0f)
+            if (GameView.ViewMode == ViewMode.World && (Position.X < 0.0f || Position.Y < 0.0f || Position.X > 48960.0f || Position.Y > 48960.0f))
                 return null;
             
             var lbx = (int)(Position.X / 192.0f);
@@ -386,12 +414,14 @@ namespace ACViewer
                 foreach (var envCell in envCells)
                 {
                     if (envCell.point_in_cell(origin))
-                        return $"0x{envCell.ID:X8} [{blockPosX} {blockPosY} {Position.Z}] {q.W} {q.X} {q.Y} {q.Z}";
+                        //return $"0x{envCell.ID:X8} [{blockPosX} {blockPosY} {Position.Z}] {q.W} {q.X} {q.Y} {q.Z}";
+                        return new Position(envCell.ID, new AFrame(new System.Numerics.Vector3(blockPosX, blockPosY, Position.Z), q.ToNumerics()));
                 }
             }
 
             // return outdoor location
-            return $"0x{objCellId:X8} [{x} {y} {Position.Z}] {q.W} {q.X} {q.Y} {q.Z}";
+            //return $"0x{objCellId:X8} [{x} {y} {Position.Z}] {q.W} {q.X} {q.Y} {q.Z}";
+            return new Position(objCellId, new AFrame(new System.Numerics.Vector3(x, y, Position.Z), q.ToNumerics()));
         }
     }
 }

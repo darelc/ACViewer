@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
+using ACViewer.Config;
+
 namespace ACViewer.View
 {
     /// <summary>
@@ -20,6 +22,38 @@ namespace ACViewer.View
             DataContext = this;
 
             //WpfGame.UseASingleSharedGraphicsDevice = true;
+
+            LoadConfig();
+        }
+
+        private static Config.Config Config => ConfigManager.Config;
+        
+        private static void LoadConfig()
+        {
+            ConfigManager.LoadConfig();
+
+            if (Config.AutomaticallyLoadDATsOnStartup)
+            {
+                MainMenu.Instance.LoadDATs(Config.ACFolder);
+            }
+
+            if (ConfigManager.HasDBInfo)
+                Server.TryPrimeDatabase();
+
+            if (ConfigManager.Config.Toggles.UseMipMaps)
+                MainMenu.ToggleMipMaps(false);
+
+            if (ConfigManager.Config.Toggles.ShowHUD)
+                MainMenu.ToggleHUD(false);
+
+            if (ConfigManager.Config.Toggles.ShowParticles)
+                MainMenu.ToggleParticles(false);
+
+            if (ConfigManager.Config.Toggles.LoadInstances)
+                MainMenu.ToggleInstances(false);
+
+            if (ConfigManager.Config.Toggles.LoadEncounters)
+                MainMenu.ToggleEncounters(false);
         }
 
         private DateTime lastUpdateTime { get; set; }
@@ -32,8 +66,12 @@ namespace ACViewer.View
 
         private bool pendingUpdate { get; set; }
 
+        public bool SuppressStatusText { get; set; }
+
         public async void AddStatusText(string line)
         {
+            if (SuppressStatusText) return;
+            
             statusLines.Add(line);
 
             var timeSinceLastUpdate = DateTime.Now - lastUpdateTime;
@@ -76,6 +114,15 @@ namespace ACViewer.View
             if (prevDID == null) return;
 
             Finder.Navigate(prevDID.Value.ToString("X8"));
+        });
+
+        public static bool DebugMode { get; set; }
+        
+        public ICommand DebugCommand { get; } = new ActionCommand(() =>
+        {
+            DebugMode = !DebugMode;
+
+            Console.WriteLine($"Debug mode {(DebugMode ? "enabled" : "disabled")}");
         });
     }
 }

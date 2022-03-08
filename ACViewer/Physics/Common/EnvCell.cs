@@ -9,6 +9,9 @@ using ACE.Server.Physics.Animation;
 using ACE.Server.Physics.Collision;
 using ACE.Server.Physics.Extensions;
 
+using ACViewer;
+using ACViewer.Enum;
+
 namespace ACE.Server.Physics.Common
 {
     public class EnvCell: ObjCell, IEquatable<EnvCell>
@@ -62,10 +65,14 @@ namespace ACE.Server.Physics.Common
             SeenOutside = envCell.SeenOutside;
 
             EnvironmentID = envCell.EnvironmentId;
-            Environment = DBObj.GetEnvironment(EnvironmentID);
+
+            if (EnvironmentID != 0)
+                Environment = DBObj.GetEnvironment(EnvironmentID);
+
             CellStructureID = envCell.CellStructure;    // environment can contain multiple?
-            if (Environment.Cells != null && Environment.Cells.ContainsKey(CellStructureID))
-                CellStructure = new CellStruct(Environment.Cells[CellStructureID]);
+
+            if (Environment?.Cells != null && Environment.Cells.TryGetValue(CellStructureID, out var cellStruct))
+                CellStructure = new CellStruct(cellStruct);
 
             NumSurfaces = envCell.Surfaces.Count;
         }
@@ -95,7 +102,16 @@ namespace ACE.Server.Physics.Common
                     transitState = CellStructure.PhysicsBSP.find_collisions(transition, 1.0f);
 
                 if (transitState != TransitionState.OK && !transition.ObjectInfo.State.HasFlag(ObjectInfoState.Contact))
+                {
                     transition.CollisionInfo.CollidedWithEnvironment = true;
+
+                    if (PhysicsObj.IsPicking)
+                    {
+                        // HitPoly set in BSPLeaf
+                        Picker.PickResult.Type = PickType.EnvCell;
+                        Picker.PickResult.ObjCell = this;
+                    }
+                }
             }
             return transitState;
         }
@@ -123,7 +139,9 @@ namespace ACE.Server.Physics.Common
 
         public void check_building_transit(ushort portalId, Position pos, int numSphere, List<Sphere> spheres, CellArray cellArray, SpherePath path)
         {
-            if (portalId == 0) return;
+            //if (portalId == 0) return;
+            if (portalId == ushort.MaxValue) return;
+
             foreach (var sphere in spheres)
             {
                 var globSphere = new Sphere(Pos.Frame.GlobalToLocal(sphere.Center), sphere.Radius);
@@ -139,7 +157,8 @@ namespace ACE.Server.Physics.Common
 
         public void check_building_transit(int portalId, int numParts, List<PhysicsPart> parts, CellArray cellArray)
         {
-            if (portalId == 0) return;
+            //if (portalId == 0) return;
+            if (portalId == ushort.MaxValue) return;
 
             var portal = Portals[portalId];
             var portalPoly = CellStructure.Portals[portalId];
@@ -195,7 +214,7 @@ namespace ACE.Server.Physics.Common
                 {
                     if (visibleCell == null) continue;
 
-                    var envCell = GetVisible(visibleCell.ID);
+                    var envCell = GetVisible(visibleCell.ID & 0xFFFF);
                     if (envCell != null && envCell.point_in_cell(origin))
                         return envCell;
                 }
@@ -289,7 +308,7 @@ namespace ACE.Server.Physics.Common
                     }
 
                     var cellBox = new BBox();
-                    cellBox.LocalToLocal(bbox, Pos, otherCell.Pos);
+                    cellBox.LocalToLocal(bbox, part.Pos, otherCell.Pos);
                     if (otherCell.CellStructure.box_intersects_cell(cellBox))
                     {
                         cellArray.add_cell(otherCell.ID, otherCell);
@@ -298,7 +317,7 @@ namespace ACE.Server.Physics.Common
                 }
             }
             if (checkOutside)
-                LandCell.add_all_outside_cells(numParts, parts, cellArray);
+                LandCell.add_all_outside_cells(numParts, parts, cellArray, ID);
         }
 
         public override void find_transit_cells(Position position, int numSphere, List<Sphere> spheres, CellArray cellArray, SpherePath path)
@@ -382,6 +401,12 @@ namespace ACE.Server.Physics.Common
                     var staticObj = PhysicsObj.makeObject(StaticObjectIDs[i], 0, false);
                     staticObj.DatObject = true;
                     staticObj.add_obj_to_cell(this, StaticObjectFrames[i]);
+                    if (staticObj.CurCell == null)
+                    {
+                        //Console.WriteLine($"EnvCell {ID:X8}: failed to add {staticObj.ID:X8}");
+                        staticObj.DestroyObject();
+                        continue;
+                    }
 
                     StaticObjects.Add(staticObj);
                 }
@@ -425,6 +450,26 @@ namespace ACE.Server.Physics.Common
         public override int GetHashCode()
         {
             return ID.GetHashCode();
+        }
+
+        public bool IsVisibleIndoors(ObjCell cell)
+        {
+            var blockDist = PhysicsObj.GetBlockDist(ID, cell.ID);
+
+            // if landblocks equal
+            if (blockDist == 0)
+            {
+                // check env VisibleCells
+                var cellID = cell.ID & 0xFFFF;
+                if (VisibleCells.ContainsKey(cellID))
+                    return true;
+            }
+            return SeenOutside && blockDist <= 1;
+        }
+
+        public override bool handle_move_restriction(Transition transition)
+        {
+            return true;
         }
     }
 }

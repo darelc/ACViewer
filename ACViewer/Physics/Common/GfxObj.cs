@@ -10,13 +10,22 @@ namespace ACE.Server.Physics.Collision
 {
     public class GfxObj
     {
-        public DatLoader.FileTypes.GfxObj _dat;
         public uint ID;
+        public DatLoader.FileTypes.GfxObj _dat;
         public CVertexArray VertexArray;
+        /// <summary>
+        /// Only populated if !PhysicsEngine.Instance.Server
+        /// </summary>
         public Dictionary<ushort, Polygon> Polygons;
+        /// <summary>
+        /// Only populated if !PhysicsEngine.Instance.Server
+        /// </summary>
         public Dictionary<ushort, Polygon> PhysicsPolygons;
         public Sphere PhysicsSphere;
         public BSP.BSPTree PhysicsBSP;
+        /// <summary>
+        /// Only populated if !PhysicsEngine.Instance.Server
+        /// </summary>
         public Vector3 SortCenter;
         public Sphere DrawingSphere;
         public BSP.BSPTree DrawingBSP;
@@ -36,21 +45,28 @@ namespace ACE.Server.Physics.Collision
             ID = gfxObj.Id;
             VertexArray = gfxObj.VertexArray;
 
-            Polygons = new Dictionary<ushort, Polygon>();
-            foreach (var kvp in gfxObj.Polygons)
-                Polygons.Add(kvp.Key, PolygonCache.Get(kvp.Value, gfxObj.VertexArray));
+            if (!PhysicsEngine.Instance.Server)
+            {
+                Polygons = new Dictionary<ushort, Polygon>();
+                foreach (var kvp in gfxObj.Polygons)
+                    Polygons.Add(kvp.Key, PolygonCache.Get(kvp.Value, gfxObj.VertexArray));
+            }
 
             if (gfxObj.PhysicsPolygons.Count > 0)
             {
-                PhysicsPolygons = new Dictionary<ushort, Polygon>();
-                foreach (var kvp in gfxObj.PhysicsPolygons)
-                    PhysicsPolygons.Add(kvp.Key, PolygonCache.Get(kvp.Value, gfxObj.VertexArray));
+                if (!PhysicsEngine.Instance.Server)
+                {
+                    PhysicsPolygons = new Dictionary<ushort, Polygon>();
+                    foreach (var kvp in gfxObj.PhysicsPolygons)
+                        PhysicsPolygons.Add(kvp.Key, PolygonCache.Get(kvp.Value, gfxObj.VertexArray));
+                }
 
                 PhysicsBSP = BSPCache.Get(gfxObj.PhysicsBSP, gfxObj.PhysicsPolygons, gfxObj.VertexArray);
                 PhysicsSphere = PhysicsBSP.GetSphere();
             }
 
-            SortCenter = gfxObj.SortCenter;
+            if (!PhysicsEngine.Instance.Server)
+                SortCenter = gfxObj.SortCenter;
             DrawingBSP = BSPCache.Get(gfxObj.DrawingBSP, gfxObj.Polygons, gfxObj.VertexArray);
             DrawingSphere = DrawingBSP.GetSphere();
 
@@ -73,6 +89,24 @@ namespace ACE.Server.Physics.Collision
                     else
                         return PhysicsBSP.find_collisions(transition, scaleZ);
                 }
+            }
+            return TransitionState.OK;
+        }
+
+        public TransitionState FindObjCollisions_Draw(Transition transition, float scaleZ)
+        {
+            var path = transition.SpherePath;
+
+            // get overall drawing sphere from root node if needed
+            var drawingSphere = DrawingSphere ?? DrawingBSP.RootNode.Sphere;
+            
+            foreach (var localSpaceSphere in path.LocalSpaceSphere)
+            {
+                var offset = drawingSphere.Center - localSpaceSphere.Center;
+                var radsum = drawingSphere.Radius + localSpaceSphere.Radius;
+
+                if (offset.LengthSquared() - radsum * radsum < PhysicsGlobals.EPSILON)
+                    return TransitionState.Collided;
             }
             return TransitionState.OK;
         }

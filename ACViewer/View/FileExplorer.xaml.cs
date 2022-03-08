@@ -28,7 +28,6 @@ namespace ACViewer.View
         public static ClothingTableList ClothingTableList => ClothingTableList.Instance;
 
         public static GameView GameView => GameView.Instance;
-        public static WorldViewer WorldViewer => WorldViewer.Instance;
         public static ModelViewer ModelViewer => ModelViewer.Instance;
         public static TextureViewer TextureViewer => TextureViewer.Instance;
 
@@ -47,10 +46,7 @@ namespace ACViewer.View
 
         public List<string> FileIDs
         {
-            get
-            {
-                return _fileIDs;
-            }
+            get => _fileIDs;
             set
             {
                 _fileIDs = value;
@@ -177,7 +173,7 @@ namespace ACViewer.View
             MainWindow.Status.WriteLine($"{selected.Name}s: {FileIDs.Count:N0}");
         }
 
-        private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
+        private void NotifyPropertyChanged([CallerMemberName] string propertyName = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
@@ -205,8 +201,8 @@ namespace ACViewer.View
                     FileInfo.SetInfo(new FileTypes.CellLandblock(landblock).BuildTree());
 
                     GameView.ViewMode = ViewMode.World;
-                    WorldViewer.Instance = new WorldViewer();
-                    WorldViewer.LoadLandblock(fileID);
+                    GameView.WorldViewer = new WorldViewer();
+                    GameView.WorldViewer.LoadLandblock(fileID);
 
                     break;
                 case 0xFFFE:
@@ -214,8 +210,8 @@ namespace ACViewer.View
                     FileInfo.SetInfo(new FileTypes.LandblockInfo(landblockInfo).BuildTree());
 
                     GameView.ViewMode = ViewMode.World;
-                    WorldViewer.Instance = new WorldViewer();
-                    WorldViewer.LoadLandblock(fileID | 0xFFFF);
+                    GameView.WorldViewer = new WorldViewer();
+                    GameView.WorldViewer.LoadLandblock(fileID | 0xFFFF);
 
                     break;
                 /* >= 0x100 && < 0xFFEE */
@@ -283,13 +279,22 @@ namespace ACViewer.View
                     break;
                 case 0x0A:
                     var sound = DatManager.PortalDat.ReadFromDat<Wave>(fileID);
-                    FileInfo.SetInfo(new FileTypes.Sound(sound).BuildTree(fileID));
-                    var stream = new MemoryStream();
-                    sound.ReadData(stream);
-                    var soundPlayer = new SoundPlayer(stream);
-                    stream.Seek(0, SeekOrigin.Begin);
-                    soundPlayer.Play();
-                    stream.Close();
+                    FileInfo.SetInfo(new Sound(sound).BuildTree(fileID));
+                    using (var stream = new MemoryStream())
+                    {
+                        sound.ReadData(stream);
+                        var soundPlayer = new SoundPlayer(stream);
+                        stream.Seek(0, SeekOrigin.Begin);
+                        try
+                        {
+                            soundPlayer.Play();
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine(e);
+                        }
+                        stream.Close();
+                    }
                     break;
                 case 0x0D:
                     var environment = DatManager.PortalDat.ReadFromDat<ACE.DatLoader.FileTypes.Environment>(fileID);

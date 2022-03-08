@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 using ACViewer.Render;
@@ -11,6 +9,7 @@ namespace ACViewer.Model
     {
         public static GraphicsDevice GraphicsDevice => GameView.Instance.GraphicsDevice;
         public static Effect Effect => Render.Render.Effect;
+        public static Effect Effect_Clamp => Render.Render.Effect_Clamp;
         public static Camera Camera => GameView.Camera;
 
         public Setup Setup { get; set; }
@@ -43,9 +42,9 @@ namespace ACViewer.Model
         /// <summary>
         /// For loading a SetupInstance with a Clothing Base
         /// </summary>
-        public SetupInstance(uint setupID, FileTypes.ObjDesc objDesc, Dictionary<int, uint> customPaletteColors)
+        public SetupInstance(uint setupID, ObjDesc objDesc)
         {
-            Setup = new Setup(setupID, objDesc, customPaletteColors);
+            Setup = new Setup(setupID, objDesc);
             
             Position = Vector3.Zero;
             Rotation = Quaternion.Identity;
@@ -91,7 +90,7 @@ namespace ACViewer.Model
             GraphicsDevice.RasterizerState = rs;
         }
 
-        public void Draw(int polyIdx = -1)
+        public void Draw(int polyIdx = -1, int partIdx = -1)
         {
             SetRasterizerState();
 
@@ -101,6 +100,8 @@ namespace ACViewer.Model
             var curPolyIdx = 0;
             for (var i = 0; i < Setup.Parts.Count; i++)
             {
+                if (partIdx != -1 && i != partIdx) continue;
+
                 //var placementFrame = Setup.PlacementFrames[i];
                 var part = Setup.Parts[i];
 
@@ -114,7 +115,10 @@ namespace ACViewer.Model
                     part.BuildVertexBuffer();
 
                 GraphicsDevice.SetVertexBuffer(part.VertexBuffer);
-                Effect.Parameters["xWorld"].SetValue(transform);
+
+                var effect = part.HasWrappingUVs ? Effect : Effect_Clamp;
+
+                effect.Parameters["xWorld"].SetValue(transform);
 
                 foreach (var polygon in part.Polygons)
                 {
@@ -128,9 +132,9 @@ namespace ACViewer.Model
                         polygon.BuildIndexBuffer();
 
                     GraphicsDevice.Indices = polygon.IndexBuffer;
-                    Effect.Parameters["xTextures"].SetValue(polygon.Texture);
+                    effect.Parameters["xTextures"].SetValue(polygon.Texture);
 
-                    foreach (var pass in Effect.CurrentTechnique.Passes)
+                    foreach (var pass in effect.CurrentTechnique.Passes)
                     {
                         pass.Apply();
 

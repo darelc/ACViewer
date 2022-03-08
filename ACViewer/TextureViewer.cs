@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework.Input;
 
 using MonoGame.Framework.WpfInterop.Input;
 
+using ACViewer.Config;
 using ACViewer.Render;
 
 namespace ACViewer
@@ -26,16 +27,9 @@ namespace ACViewer
         public WpfKeyboard Keyboard => GameView.Instance._keyboard;
         public WpfMouse Mouse => GameView.Instance._mouse;
 
-        public KeyboardState PrevKeyboardState
-        {
-            get => GameView.Instance.PrevKeyboardState;
-            set => GameView.Instance.PrevKeyboardState = value;
-        }
-        public MouseState PrevMouseState
-        {
-            get => GameView.Instance.PrevMouseState;
-            set => GameView.Instance.PrevMouseState = value;
-        }
+        public KeyboardState PrevKeyboardState => GameView.Instance.PrevKeyboardState;
+
+        public MouseState PrevMouseState => GameView.Instance.PrevMouseState;
 
         public Vector2 Pos { get; set; }
         public Matrix Translate { get; set; } = Matrix.Identity;
@@ -86,7 +80,9 @@ namespace ACViewer
             if (mouseState.Position != PrevMouseState.Position)
                 OnMouseMove(mouseState);
 
-            if (mouseState.LeftButton == ButtonState.Pressed || mouseState.RightButton == ButtonState.Pressed)
+            // PrevMouseState check prevents image from jumping around drastically if window is unfocused, and then refocused with a click
+            if (mouseState.LeftButton == ButtonState.Pressed && PrevMouseState.LeftButton == ButtonState.Pressed ||
+                mouseState.RightButton == ButtonState.Pressed && PrevMouseState.RightButton == ButtonState.Pressed)
             {
                 var delta = PrevMouseState.Position - mouseState.Position;
                 Pos -= new Vector2(delta.X, delta.Y);
@@ -100,9 +96,6 @@ namespace ACViewer
                 var diff = mouseState.ScrollWheelValue - PrevMouseState.ScrollWheelValue;
                 OnZoom(diff);
             }
-
-            PrevKeyboardState = keyboardState;
-            PrevMouseState = mouseState;
         }
 
         public void SetScale(float scale)
@@ -161,7 +154,7 @@ namespace ACViewer
         {
             if (Texture == null) return;
 
-            GraphicsDevice.Clear(Color.Black);
+            GraphicsDevice.Clear(ConfigManager.Config.BackgroundColors.TextureViewer);
 
             var samplerState = FileID >> 24 == 0x04 || FileID >> 24 == 0x0F ? SamplerState.PointClamp : SamplerState.LinearClamp;
 

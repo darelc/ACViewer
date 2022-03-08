@@ -22,6 +22,35 @@ namespace ACE.Server.Physics.Animation
         public int PlacementFrameID;
         public bool IsTrivial;
 
+        public static HashSet<uint> PlayerIdleAnims;
+
+        static Sequence()
+        {
+            PlayerIdleAnims = new HashSet<uint>();
+            PlayerIdleAnims.Add(0x03000001);    // NonCombat
+            PlayerIdleAnims.Add(0x0300049E);    // AtlatlCombat
+            PlayerIdleAnims.Add(0x0300045A);    // BowCombat
+            PlayerIdleAnims.Add(0x03000474);    // CrossbowCombat
+            PlayerIdleAnims.Add(0x03000CA8);    // DualWieldCombat
+            PlayerIdleAnims.Add(0x03000448);    // HandCombat
+            PlayerIdleAnims.Add(0x0300076C);    // Magic
+            PlayerIdleAnims.Add(0x0300043D);    // SwordCombat
+            PlayerIdleAnims.Add(0x03000426);    // SwordShieldCombat
+            PlayerIdleAnims.Add(0x030008DF);    // ThrownShieldCombat
+            PlayerIdleAnims.Add(0x0300049E);    // ThrownWeaponCombat
+            PlayerIdleAnims.Add(0x03000B05);    // TwoHandedSwordCombat
+        }
+
+        public bool is_idle_anim()
+        {
+            return CurrAnim == null || PlayerIdleAnims.Contains(CurrAnim.Value.Anim.ID);
+        }
+
+        public bool is_first_cyclic()
+        {
+            return CurrAnim == null || CurrAnim.Equals(FirstCyclic);
+        }
+
         public Sequence()
         {
             Init();
@@ -247,15 +276,13 @@ namespace ACE.Server.Physics.Animation
 
         public void multiply_cyclic_animation_framerate(float rate)
         {
-            if (FirstCyclic == null) return;
-            var cyclic = false;
-            foreach (var animFrame in AnimList)
-            {
-                if (animFrame.Equals(FirstCyclic))
-                    cyclic = true;
+            var currNode = FirstCyclic;
 
-                if (cyclic)
-                    animFrame.multiply_framerate(rate);
+            while (currNode != null)
+            {
+                currNode.Value.multiply_framerate(rate);
+
+                currNode = currNode.Next;
             }
         }
 

@@ -36,6 +36,7 @@ namespace ACViewer
         public static ModelViewer ModelViewer { get; set; }
         public static TextureViewer TextureViewer { get; set; }
         public static ParticleViewer ParticleViewer { get; set; }
+        public static WorldObjectViewer WorldObjectViewer { get; set; }
 
         private static ViewMode _viewMode { get; set; }
 
@@ -48,7 +49,7 @@ namespace ACViewer
                 
                 _viewMode = value;
 
-                if (_viewMode == ViewMode.Model)
+                if (_viewMode == ViewMode.Model || _viewMode == ViewMode.WorldObject)
                 {
                     Camera.Position = new Vector3(-10, -10, 10);
                     Camera.Dir = Vector3.Normalize(-Camera.Position);
@@ -117,6 +118,7 @@ namespace ACViewer
             ModelViewer = new ModelViewer();
             TextureViewer = new TextureViewer();
             ParticleViewer = new ParticleViewer();
+            WorldObjectViewer = new WorldObjectViewer();
         }
 
         public void InitPlayer()
@@ -128,6 +130,7 @@ namespace ACViewer
         {
             // every update we can now query the keyboard & mouse for our WpfGame
             var keyboardState = _keyboard.GetState();
+            var mouseState = _mouse.GetState();
 
             if (keyboardState.IsKeyDown(Keys.C) && !PrevKeyboardState.IsKeyDown(Keys.C))
             {
@@ -136,16 +139,17 @@ namespace ACViewer
                 Player.PhysicsObj.destroy_particle_manager();
             }
 
+            /*if (keyboardState.IsKeyDown(Keys.L) && !PrevKeyboardState.IsKeyDown(Keys.L))
+            {
+                ViewMode = ViewMode.WorldObject;
+                WorldObjectViewer.Instance.LoadModel(42809);
+            }*/
+
             if (!_graphicsDeviceManager.PreferMultiSampling && UseMSAA && DateTime.Now - LastResizeEvent >= TimeSpan.FromSeconds(1))
             {
                 _graphicsDeviceManager.PreferMultiSampling = true;
                 _graphicsDeviceManager.ApplyChanges();
             }
-
-            PrevKeyboardState = keyboardState;
-
-            if (Player != null)
-                Player.Update(time);
 
             switch (ViewMode)
             {
@@ -164,15 +168,19 @@ namespace ACViewer
                 case ViewMode.Particle:
                     ParticleViewer.Update(time);
                     break;
+                case ViewMode.WorldObject:
+                    WorldObjectViewer.Update(time);
+                    break;
             }
+
+            PrevKeyboardState = keyboardState;
+            PrevMouseState = mouseState;
+
+            base.Update(time);
         }
 
-        private static readonly Color BackgroundColor = new Color(0, 0, 0);
-        
         protected override void Draw(GameTime time)
         {
-            GraphicsDevice.Clear(BackgroundColor);
-
             switch (ViewMode)
             {
                 case ViewMode.Texture:
@@ -190,7 +198,12 @@ namespace ACViewer
                 case ViewMode.Particle:
                     ParticleViewer.Draw(time);
                     break;
+                case ViewMode.WorldObject:
+                    WorldObjectViewer.Draw(time);
+                    break;
             }
+
+            base.Draw(time);
         }
 
         private void GameView_SizeChanged(object sender, SizeChangedEventArgs e)

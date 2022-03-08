@@ -32,6 +32,19 @@ namespace ACViewer.Model
 
         public BoundingBox BoundingBox { get; set; }
 
+        private bool? hasWrappingUVs;
+        
+        public bool HasWrappingUVs
+        {
+            get
+            {
+                if (hasWrappingUVs == null)
+                    hasWrappingUVs = _gfxObj.VertexArray.HasWrappingUVs();
+
+                return hasWrappingUVs.Value;
+            }
+        }
+
         public GfxObj(uint gfxObjID, bool doBuild = true)
         {
             MainWindow.Instance.Status.WriteLine($"Loading GfxObj {gfxObjID:X8}");
@@ -72,7 +85,7 @@ namespace ACViewer.Model
             VertexBuffer.SetData(VertexArray.ToArray());
         }
 
-        public void LoadTextures(List<ACE.DatLoader.Entity.TextureMapChange> textureChanges = null, Dictionary<int, uint> customPaletteColors = null, bool useCache = true)
+        public void LoadTextures(Dictionary<uint, uint> textureChanges = null, PaletteChanges paletteChanges = null, bool useCache = true)
         {
             Textures = new List<Texture2D>();
             Surfaces = new List<Surface>();
@@ -82,7 +95,7 @@ namespace ACViewer.Model
                 var surface = DatManager.PortalDat.ReadFromDat<Surface>(surfaceID);
                 Surfaces.Add(surface);
 
-                Textures.Add(TextureCache.Get(surfaceID, textureChanges, customPaletteColors, useCache));
+                Textures.Add(TextureCache.Get(surfaceID, textureChanges, paletteChanges, useCache));
             }
         }
 
