@@ -84,7 +84,7 @@
 
 	<PropertyGroup>
 		<PostBuildEvent>
-			robocopy $(SolutionDir)docs $(TargetDir)docs /S /E /COPY:DAT /MIR /NP /TEE /V
+			robocopy &quot;$(SolutionDir)docs&quot; $(TargetDir)docs /S /E /COPY:DAT /MIR /NP /TEE /V
 
 			if %25ERRORLEVEL%25 EQU 16 echo ***FATAL ERROR*** &amp; goto end
 			if %25ERRORLEVEL%25 EQU 15 echo OKCOPY + FAIL + MISMATCHES + XTRA &amp; goto end
