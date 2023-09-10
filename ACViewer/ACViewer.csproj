@@ -2,10 +2,18 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net5.0-windows</TargetFramework>
+    <TargetFramework>net6.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <ApplicationIcon />
     <StartupObject />
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <OutputType>WinExe</OutputType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <OutputType>Exe</OutputType>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,9 +39,11 @@
   </ItemGroup>
 
   <ItemGroup>
+	  <PackageReference Include="AssimpNet" Version="5.0.0-beta1" />
 	  <PackageReference Include="MonoGame.Framework.WindowsDX" Version="3.8.0.1641" />
 	  <PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.0.1641" />
 	  <PackageReference Include="MonoGame.Framework.WpfInterop" Version="1.9.2" />
+	  <PackageReference Include="UkooLabs.FbxSharpie" Version="1.0.99" />
   </ItemGroup>
 
   <ItemGroup>
@@ -107,4 +117,8 @@
 			exit 0
 		</PostBuildEvent>
 	</PropertyGroup>
+
+	<PropertyGroup>
+		<SourceRevisionId>build$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</SourceRevisionId>
+	</PropertyGroup>	
 </Project>
