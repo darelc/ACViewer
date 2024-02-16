@@ -119,6 +119,10 @@ namespace ACViewer.Render
 
             foreach (var polygon in Polygons)
             {
+                // only use this hack for envcells / possibly buildings?
+                // bugged path: 000102BF-> 0D000425-> 080000DF
+                if (polygon._polygon.Stippling == ACE.Entity.Enum.StipplingType.NoPos) continue;
+
                 if (polygon.IndexBuffer == null)
                     polygon.BuildIndexBuffer();
 

@@ -54,6 +54,9 @@ namespace ACViewer.View
 
             if (ConfigManager.Config.Toggles.LoadEncounters)
                 MainMenu.ToggleEncounters(false);
+
+            if (ConfigManager.Config.Theme != null)
+                ThemeManager.SetTheme(ConfigManager.Config.Theme);
         }
 
         private DateTime lastUpdateTime { get; set; }
@@ -124,5 +127,10 @@ namespace ACViewer.View
 
             Console.WriteLine($"Debug mode {(DebugMode ? "enabled" : "disabled")}");
         });
+
+        private void Window_Activated(object sender, EventArgs e)
+        {
+
+        }
     }
 }

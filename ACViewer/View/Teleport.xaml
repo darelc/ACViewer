@@ -6,8 +6,9 @@
         xmlns:local="clr-namespace:ACViewer.View"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen" 
+        ShowInTaskbar="False"
         FocusManager.FocusedElement="{Binding ElementName=Search}"
-        Title="Teleport" Height="695" Width="764" Icon="../Icons/portal.png">
+        Title="Teleport" Height="695" Width="764" Icon="../Icons/portal.png" Style="{DynamicResource CustomWindowStyle}">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
