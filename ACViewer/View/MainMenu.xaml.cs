@@ -88,7 +88,8 @@ namespace ACViewer.View
                 var portalFiles = DatManager.PortalDat.AllFiles.Count;
 
                 MainWindow.Status.WriteLine($"CellFiles={cellFiles}, PortalFiles={portalFiles}");*/
-                MainWindow.Status.WriteLine("Done");
+                MainWindow.Status.WriteLine(runWorkerCompletedEventArgs.Error?.Message ?? "Done");
+                    
 
                 if (DatManager.CellDat == null || DatManager.PortalDat == null) return;
 
@@ -387,6 +388,18 @@ namespace ACViewer.View
             worker.RunWorkerCompleted += (sender, runWorkerCompletedEventArgs) => Server.LoadEncounters_Finalize();
 
             worker.RunWorkerAsync();
+        }
+
+        private void miVirindiColorTool_Click(object sender, RoutedEventArgs e)
+        {
+            var vct = new VirindiColorTool();
+            vct.ShowDialog();
+        }
+
+        private void MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            var armorWindow = new ArmorList();
+            armorWindow.ShowDialog();
         }
     }
 }
